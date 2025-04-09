@@ -34,6 +34,21 @@ app = Flask(__name__)
 
 GRAPH_PATH = "network.dat"
 COMMUNITY_PATH = "community.dat"
+COUNTER_FILE = "static/plot_counter.txt"
+
+def get_next_plot_index():
+    # Read the last index
+    if os.path.exists(COUNTER_FILE):
+        with open(COUNTER_FILE, "r") as f:
+            index = int(f.read().strip())
+    else:
+        index = 0
+
+    # Increment and save back
+    with open(COUNTER_FILE, "w") as f:
+        f.write(str(index + 1))
+
+    return index
 
 def compute_onmi(graph, detected_communities, ground_truth_communities):
     """
@@ -507,6 +522,7 @@ def detect():
     best_result = None
     best_score = float("-inf")  # Best score for the chosen metric
     all_results = []
+    image_paths = []
 
     for i in range(N):
         if algorithm == "slpa":
@@ -598,9 +614,14 @@ def detect():
                 print(f"Failed to run HLC with threshold {ahn_threshold}")
                 continue
             
-        image_filename = f"community_plot_{i}.png"
-        plot_communities(G, ground_truth_communities, detected_communities, image_filename)
-        image_url = url_for("static", filename=image_filename)
+        index = get_next_plot_index()
+        image_path = plot_communities(G, ground_truth_communities, detected_communities, index)
+
+        image_url = url_for("static", filename=f"community_plot_{index}.png")
+        image_paths.append({
+            "image_url": image_url,
+            "index": index
+        })
 
         
         result_metrics = compute_metrics(G, detected_communities, ground_truth_communities)
@@ -609,7 +630,6 @@ def detect():
         }
 
         score = result_metrics[best_by]  # Get the score based on the selected metric
-
         all_results.append({
             "algorithm": algorithm,
             "params": params,
@@ -772,12 +792,11 @@ def node2vec_fuzzy_cmeans(G, dimensions, walk_length, num_walks, clusters,p, q, 
 
     return [frozenset(nodes) for nodes in communities.values()]
 
-def plot_communities(G, ground_truth, detected, filename):
+def plot_communities(G, ground_truth, detected, index=None):
     pos = nx.spring_layout(G, seed=10)
-
-    fig, axes = plt.subplots(1, 2, figsize=(10, 6))  
-    axes[0].axis('off')  
-    axes[1].axis('off')  
+    fig, axes = plt.subplots(1, 2, figsize=(10, 6))
+    axes[0].axis('off')
+    axes[1].axis('off')
 
     axes[0].set_title("Ground Truth Communities")
     draw_colored_communities(G, ground_truth, pos, ax=axes[0])
@@ -786,8 +805,10 @@ def plot_communities(G, ground_truth, detected, filename):
     draw_colored_communities(G, detected, pos, ax=axes[1])
 
     plt.tight_layout()
-    plt.savefig(f"static/{filename}")
+    filename = f"static/community_plot_{index}.png" if index is not None else "static/community_plot.png"
+    plt.savefig(filename)
     plt.close()
+    return filename
 
 
 
