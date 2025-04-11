@@ -133,7 +133,6 @@ class HLC:
         edge2cid = {tuple(sorted(e)): cid for cid, edges in best_partition.items() for e in edges}
         cid2nodes = {cid: list(set(i for e in edges for i in e)) for cid, edges in best_partition.items()}
 
-        # Return the modified linkage with 4 columns
         return edge2cid, best_S, best_D, list_D, dict(best_partition), cid2nodes, linkage
 
     
@@ -167,12 +166,6 @@ def run_hlc_on_nx_graph(G, threshold=None, dendro_flag=False):
     hlc = HLC(adj, edges)
 
     if threshold is not None:
-        if is_weighted:
-            return hlc.single_linkage(threshold=threshold, w=ij2wij, dendro_flag=dendro_flag)
-        else:
-            return hlc.single_linkage(threshold=threshold, dendro_flag=dendro_flag)
+        return hlc.single_linkage(threshold=threshold, dendro_flag=dendro_flag)
     else:
-        if is_weighted:
-            return hlc.single_linkage(w=ij2wij, dendro_flag=dendro_flag)
-        else:
-            return hlc.single_linkage(dendro_flag=dendro_flag)
+        return hlc.single_linkage(dendro_flag=dendro_flag)

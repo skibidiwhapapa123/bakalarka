@@ -586,16 +586,20 @@ def detect():
         
         elif algorithm == "ahnlink":
             ahn_threshold = float(request.json.get("ahn_threshold", 0.2))
-            edge2cid, _, _, _, cid2edges, cid2nodes = run_hlc_on_nx_graph(G, threshold=ahn_threshold)
-            detected_communities = [frozenset(nodes) for nodes in cid2nodes.values()]
+            if ahn_threshold > 0.0:
+                edge2cid, _, _, _, cid2edges, cid2nodes, single_linkage = run_hlc_on_nx_graph(G) #(G, threshold=ahn_threshold)
+            else: 
+                edge2cid, _, _, _, cid2edges, cid2nodes = run_hlc_on_nx_graph(G, threshold=ahn_threshold)
+            #filter out primitive communities
+            detected_communities = [frozenset(nodes) for nodes in cid2nodes.values() if len(nodes) >= 3]
             params = {"threshold": ahn_threshold}
         elif algorithm == "hlc":
             ahn_threshold = float(request.json.get("ahn_threshold", 0.2))
-            cmd = [
-                "python3", "ahn_original.py",
-                "-t", str(ahn_threshold),
-                GRAPH_PATH
-            ]
+            cmd = (
+                ["python3", "ahn_original.py", "-t", str(ahn_threshold), GRAPH_PATH]
+                if ahn_threshold > 0.0
+                else ["python3", "ahn_original.py", GRAPH_PATH]
+            ) 
             try:
                 subprocess.run(cmd, check=True)
                 # HLC will create an output file like: network_thrS0.5_thrD0.45.edge2comm.txt
@@ -661,6 +665,14 @@ def read_comm2nodes(file_path):
             if len(parts) > 1:
                 node_ids = set(map(int, parts[1:]))
                 communities.append(node_ids)
+
+    # Filter out small communities first
+    communities = [com for com in communities if len(com) >= 3]
+
+    # Then print the remaining ones
+    for com in communities:
+        print(com)        
+
     return communities
 
 
@@ -735,7 +747,7 @@ def optimize():
         
         for threshold in thresholds:
             edge2cid, _, _, _, cid2edges, cid2nodes = run_hlc_on_nx_graph(G, threshold=threshold)
-            detected_communities = [frozenset(nodes) for nodes in cid2nodes.values()]
+            detected_communities = [frozenset(nodes) for nodes in cid2nodes.values() if len(nodes) >= 3]
             result_metrics = compute_metrics(G, detected_communities, ground_truth_communities)
             score = result_metrics.get(metric_to_optimize, 0)
 
