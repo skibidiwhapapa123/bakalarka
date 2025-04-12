@@ -67,6 +67,7 @@ class HLC:
         self.curr_maxcid = 0
         self.linkage = []  # dendrogram
 
+
         self.initialize_edges() # every edge in its own comm
         self.D = 0.0 # partition density
 

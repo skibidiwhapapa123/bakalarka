@@ -165,8 +165,8 @@
             <label for="algorithm-select">Select Algorithm:</label>
             <select id="algorithm-select">
                 <option value="slpa">SLPA</option>
-                <option value="ahnlink">AHN</option>
-                <option value="hlc">Original AHN</option>
+                <option value="linkcom">AHN</option>
+                <option value="linkcom_original">Original AHN</option>
             </select>
             <br/>
             <label for="metric-select">Select Metric:</label>
@@ -185,25 +185,40 @@
             <label for="algorithm">Algorithm:</label>
             <select id="algorithm" name="algorithm" onchange="toggleParams()">
                 <option value="slpa">SLPA</option>
-                <option value="ahnlink">AHN</option>
-                <option value="hlc">Original AHN</option>
+                <option value="slpa_cdlib">SLPA CDLIB</option>
+                <option value="linkcom">AHN</option>
+                <option value="linkcom_original">AHN original</option>
                 <option value="n2vfcm">Node2Vec + FCM</option>
                 <option value="demon">DEMON</option>
                 <option value="conga">CONGA</option>
-                <option value="oslom">OSLOM</option> 
+                <option value="oslom">OSLOM original</option> 
             </select>
 
             <div id="slpa_params">
                 <label for="T">Iterations (T):</label>
                 <input type="number" name="T" value="20"><br>
-
                 <label for="r">Retention Probability (r):</label>
                 <input type="text" name="r" value="0.3"><br> 
             </div>
             <div id="ahn_params" style="display:none;">
                 <label for="ahn_threshold">threshold</label>
-                <input type="number" name="ahn_threshold" value="0.2"><br>
+                <input type="number" name="ahn_threshold" id="ahn_threshold" value="0.2" disabled><input type="checkbox" id="ahn_use_threshold"><br>
+                <label for="method">Linkage</label>
+                <select name="method">
+                    <option value="single">single</option>
+                    <option value="complete">complete</option>
+                    <option value="average">average</option>
+                </select>
+                <br>
+                <label for="ahn_min_com">Min community size: </label>
+                <input type="number" name="ahn_min_com" value="3">
             </div>
+            
+            <div id="ahn_original_params">
+                <label for="ahn_original_threshold">Threshold:</label>
+                <input type="number" name="ahn_original_threshold" id="ahn_original_threshold" value="0.2" disabled><input type="checkbox" id="ahn_original_use_threshold"> <br>
+            </div>
+            
             <div id="oslom_params" style="display:none;">
                 <label for="oslom_f_l_i">First Level Iterations (r)</label>
                 <input type="number" name="oslom_f_l_i" value="10">
@@ -309,14 +324,38 @@
 
 <script>
     function toggleParams() {
-        var algo = document.getElementById("algorithm").value;
-        document.getElementById("slpa_params").style.display = (algo == "slpa") ? "block" : "none";
+        const algo = document.getElementById("algorithm").value;
+        const nIterationsInput = document.getElementById("N");
+        const nIterationsLabel = document.getElementById("N").previousElementSibling;
+
+        document.getElementById("slpa_params").style.display = (algo == "slpa" || algo == "slpa_cdlib") ? "block" : "none";
         document.getElementById("node2vec_params").style.display = (algo == "n2vfcm") ? "block" : "none";
         document.getElementById("demon_params").style.display = (algo == "demon") ? "block" : "none";
         document.getElementById("conga_params").style.display = (algo == "conga") ? "block" : "none";
-        document.getElementById("ahn_params").style.display = (algo == "ahnlink" || algo == "hlc") ? "block" : "none";
+        document.getElementById("ahn_params").style.display = (algo == "linkcom") ? "block" : "none";
+        document.getElementById("ahn_original_params").style.display = (algo == "linkcom_original") ? "block" : "none";
         document.getElementById("oslom_params").style.display = (algo == "oslom") ? "block" : "none";
+
+        const hideDetectionOptions = (algo === "oslom" || algo === "linkcom" || algo=== "linkcom_original");
+        if (hideDetectionOptions) {
+            nIterationsInput.style.display = "none";
+            nIterationsLabel.style.display = "none";
+        } else {
+            nIterationsInput.style.display = "block";
+            nIterationsLabel.style.display = "block";
+        }
     }
+
+
+    document.getElementById('ahn_use_threshold').addEventListener('change', function () {
+        const ahnthresholdInput = document.getElementById('ahn_threshold');
+        ahnthresholdInput.disabled = !this.checked;
+    });
+
+    document.getElementById('ahn_original_use_threshold').addEventListener('change', function () {
+        const ahnthresholdInput = document.getElementById('ahn_original_threshold');
+        ahnthresholdInput.disabled = !this.checked;
+    });
 
     document.getElementById("optimize-slpa-btn").addEventListener("click", async () => {
     // Disable Detect button during optimization
@@ -503,7 +542,9 @@ function detectCommunities() {
         formData.best_by = document.getElementById("select-metric").value;
     }
 
-    if (formData.algorithm === "slpa") {
+    
+
+    if (formData.algorithm === "slpa" || formData.algorithm == "slpa_cdlib") {
         formData.T = document.querySelector("input[name='T']").value;
         formData.r = document.querySelector("input[name='r']").value;
     } else if (formData.algorithm === "n2vfcm") {
@@ -522,8 +563,12 @@ function detectCommunities() {
         formData.min_community_size = document.querySelector("input[name='min_community_size']").value;
     } else if (formData.algorithm === "conga") {
         formData.number_community = document.querySelector("input[name='number_community']").value;
-    } else if (formData.algorithm === "ahnlink" || formData.algorithm === "hlc" ){
+    } else if (formData.algorithm === "linkcom" ){
+        const useThreshold = document.getElementById('ahn_use_threshold').checked;
+        formData.ahn_use_threshold = useThreshold;
         formData.ahn_threshold = document.querySelector("input[name='ahn_threshold']").value;
+        formData.ahn_min_com = document.querySelector("input[name='ahn_min_com']").value;
+        formData.method = document.querySelector("select[name='method']").value;
     } else if (formData.algorithm == "oslom") {
         formData.oslom_f_l_i = document.querySelector("input[name='oslom_f_l_i']").value;
         formData.oslom_h_l_i = document.querySelector("input[name='oslom_h_l_i']").value;
@@ -532,6 +577,12 @@ function detectCommunities() {
         formData.oslom_louvain = document.querySelector("input[name='oslom_louvain']").value;
         formData.oslom_copra = document.querySelector("input[name='oslom_copra']").value;
         formData.oslom_singler = document.querySelector("input[name='oslom_singler']").value;
+
+    }
+    else if (formData.algorithm === "linkcom_original" ) {
+        formData.ahn_original_threshold = document.querySelector("input[name='ahn_original_threshold']").value;
+        const useThreshold = document.getElementById('ahn_original_use_threshold').checked;
+        formData.ahn_original_use_threshold = useThreshold;
     }
 
     fetch("/detect", {

@@ -8,7 +8,7 @@ class HLC:
         self.adj = adj
         self.edges = edges
 
-    def edge_similarity(self, e1, e2, w=None):
+    def edge_similarity(self, e1, e2):
         i, j = e1
         k, l = e2
 
@@ -18,17 +18,12 @@ class HLC:
         u = j if i in (k, l) else i
         v = l if k in (i, j) else k
 
-        Nu = self.adj[u] - {v}
-        Nv = self.adj[v] - {u}
+        Nu = self.adj[u] | {u}
+        Nv = self.adj[v] | {v}
         I = Nu & Nv
+        U = Nu | Nv
 
-        if w is None:
-            return len(I) / ((len(Nu) * len(Nv)) ** 0.5) if Nu and Nv else 0.0
-        else:
-            sum_w = sum(w.get(tuple(sorted((u, n))), 1.0) for n in I)
-            denom = (sum(w.get(tuple(sorted((u, n))), 1.0) for n in Nu) *
-                     sum(w.get(tuple(sorted((v, n))), 1.0) for n in Nv)) ** 0.5
-            return sum_w / denom if denom else 0.0
+        return len(I) / len(U) if U else 0.0
 
     def partition_density(self, cid2edges):
         m = sum(len(edges) for edges in cid2edges.values())
@@ -42,88 +37,78 @@ class HLC:
                 nodes.add(j)
             n = len(nodes)
             l = len(edges)
-            D += (l * (l - n + 1)) / ((n - 2) * (n - 1)) if n > 2 else 0
+            if n > 2:
+                D += (l * (l - n + 1)) / ((n - 2) * (n - 1))
         return (2 / m) * D if m else 0
 
-    def single_linkage(self, threshold=None, w=None, dendro_flag=False):
-        similarities = []
-        edge_index = {tuple(sorted(edge)): idx for idx, edge in enumerate(self.edges)}
+    def cluster_similarity(self, c1, c2, sim_matrix, linkage):
+        sims = [
+            sim_matrix[(min(e1, e2), max(e1, e2))]
+            for e1 in c1 for e2 in c2
+            if (min(e1, e2), max(e1, e2)) in sim_matrix
+        ]
+        if not sims:
+            return 0.0
+        if linkage == "single":
+            return max(sims)
+        elif linkage == "complete":
+            return min(sims)
+        elif linkage == "average":
+            return sum(sims) / len(sims)
+        return 0.0
+
+    def linkage_clustering(self, threshold=None, linkage="single"):
+        edge_index = {tuple(sorted(e)): idx for idx, e in enumerate(self.edges)}
+        sim_matrix = {}
+
+        print(linkage)
 
         for node in self.adj:
-            neighbors = list(self.adj[node])
-            for u, v in combinations(neighbors, 2):
+            for u, v in combinations(self.adj[node], 2):
                 e1 = tuple(sorted((node, u)))
                 e2 = tuple(sorted((node, v)))
                 if e1 in edge_index and e2 in edge_index:
-                    sim = self.edge_similarity(e1, e2, w)
-                    similarities.append((sim, edge_index[e1], edge_index[e2]))
+                    i, j = edge_index[e1], edge_index[e2]
+                    sim = self.edge_similarity(e1, e2)
+                    sim_matrix[(min(i, j), max(i, j))] = sim
 
-        similarities.sort(reverse=True)
+        clusters = {i: {i} for i in range(len(self.edges))}
 
-        parent = list(range(len(self.edges)))  # parent list for union-find
-        size = [1] * len(self.edges)  # to store the size of each cluster
-
-        # To keep track of the next available cluster index for merges
-        next_cluster_idx = len(self.edges)
-
-        def find(x):
-            while parent[x] != x:
-                parent[x] = parent[parent[x]]
-                x = parent[x]
-            return x
-
-        def union(x, y):
-            nonlocal next_cluster_idx
-            x_root = find(x)
-            y_root = find(y)
-            if x_root != y_root:
-                # Union by size, attach the smaller tree under the larger one
-                if size[x_root] < size[y_root]:
-                    x_root, y_root = y_root, x_root
-                parent[y_root] = x_root
-                size[x_root] += size[y_root]
-                # Create a new cluster for this merged set
-                new_cluster_idx = next_cluster_idx
-                next_cluster_idx += 1
-                return new_cluster_idx
-            return None
-
-        list_D = []
         best_D = 0
         best_S = 0
         best_partition = None
-        linkage = []
 
-        D = 0  # Ensure that D has a default value
+        while True:
+            best_pair = None
+            best_sim = -1
+            cluster_ids = list(clusters.keys())
 
-        for sim, i, j in similarities:
-            if threshold is not None and sim < threshold:
+            for i in range(len(cluster_ids)):
+                for j in range(i + 1, len(cluster_ids)):
+                    c1, c2 = cluster_ids[i], cluster_ids[j]
+                    sim = self.cluster_similarity(clusters[c1], clusters[c2], sim_matrix, linkage)
+                    if sim > best_sim:
+                        best_sim = sim
+                        best_pair = (c1, c2)
+
+            if best_pair is None or (threshold is not None and best_sim < threshold):
                 break
-            new_cluster_idx = union(i, j)
-            if new_cluster_idx is not None:
-                # Update the linkage with 4 columns: (distance, node1, node2, size_of_cluster)
-                linkage.append((sim, i, j, size[find(i)]))
-                if threshold is None:
-                    cid2edges = defaultdict(list)
-                    for idx, p in enumerate(parent):
-                        cid = find(p)
-                        cid2edges[cid].append(self.edges[idx])
-                    D = self.partition_density(cid2edges)  # Assign D here
 
-                # Update best partition based on density
-                if D > best_D:
-                    best_D = D
-                    best_S = sim
-                    best_partition = dict(cid2edges)
+            c1, c2 = best_pair
+            clusters[c1].update(clusters[c2])
+            del clusters[c2]
 
-        if threshold is not None:
+            # Evaluate partition density
             cid2edges = defaultdict(list)
-            for idx, p in enumerate(parent):
-                cid = find(p)
-                cid2edges[cid].append(self.edges[idx])
-            edge2cid = {tuple(sorted(e)): cid for cid, edges in cid2edges.items() for e in edges}
-            cid2nodes = {cid: list(set(i for e in edges for i in e)) for cid, edges in cid2edges.items()}
-            return edge2cid, None, None, None, dict(cid2edges), cid2nodes
+            for cid, edge_ids in clusters.items():
+                for eid in edge_ids:
+                    cid2edges[cid].append(self.edges[eid])
+
+            D = self.partition_density(cid2edges)
+            if D > best_D:
+                best_D = D
+                best_S = best_sim
+                best_partition = dict(cid2edges)
 
         if best_partition is None:
             best_partition = defaultdict(list)
@@ -131,41 +116,27 @@ class HLC:
                 best_partition[idx].append(edge)
 
         edge2cid = {tuple(sorted(e)): cid for cid, edges in best_partition.items() for e in edges}
-        cid2nodes = {cid: list(set(i for e in edges for i in e)) for cid, edges in best_partition.items()}
-
-        return edge2cid, best_S, best_D, list_D, dict(best_partition), cid2nodes, linkage
-
-    
+        cid2nodes = {cid: list({i for e in edges for i in e}) for cid, edges in best_partition.items()}
+        print("# D_max = %f\n# S_max = %f" % (best_D, best_S))
+        return edge2cid, best_S, best_D, best_partition, cid2nodes
 
 
-
-def run_hlc_on_nx_graph(G, threshold=None, dendro_flag=False):
+def link_communities(G, threshold=None, linkage="single"):
     """
     Run HLC on a networkx graph `G`.
 
     Parameters:
-        G: networkx.Graph or networkx.DiGraph
-        threshold: optional float – similarity threshold for cutting dendrogram
-        dendro_flag: bool – if True, store full dendrogram
+        G: networkx.Graph
+        threshold: float – optional similarity threshold for stopping
+        linkage: str – 'single', 'complete', or 'average'
 
     Returns:
         edge2cid: dict mapping edges to community IDs
-        S_best, D_best: floats, best threshold and partition density
-        list_D: list of (threshold, D) values
+        best_S, best_D: float
         cid2edges: dict of community ID to list of edges
         cid2nodes: dict of community ID to list of nodes
     """
     adj = {i: set(G.neighbors(i)) for i in G.nodes()}
-    edges = [(i, j) for i, j in G.edges() if i < j]
-
-    is_weighted = nx.is_weighted(G)
-    ij2wij = None
-    if is_weighted:
-        ij2wij = {tuple(sorted((i, j))): d['weight'] for i, j, d in G.edges(data=True)}
-
+    edges = list(G.edges())
     hlc = HLC(adj, edges)
-
-    if threshold is not None:
-        return hlc.single_linkage(threshold=threshold, dendro_flag=dendro_flag)
-    else:
-        return hlc.single_linkage(dendro_flag=dendro_flag)
+    return hlc.linkage_clustering(threshold=threshold, linkage=linkage)

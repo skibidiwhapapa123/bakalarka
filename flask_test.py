@@ -15,7 +15,8 @@ from node2vec import Node2Vec
 import skfuzzy as fuzz
 from demonalgo import DemonAlgorithm
 from cdlib import NodeClustering
-from ahn_link import run_hlc_on_nx_graph
+from ahn_link import link_communities
+from slpaalgorithm import find_communities
 from cdlib.algorithms import (
     slpa,
     demon,
@@ -165,40 +166,7 @@ def compute_metrics(graph, detected_communities, ground_truth_communities):
     }
 
 
-# SLPA community detection
-def find_communities(G, T, r):
-    memory = {i: {i: 1} for i in G.nodes()}
 
-    for _ in range(T):
-        listeners_order = list(G.nodes())
-        np.random.shuffle(listeners_order)
-
-        for listener in listeners_order:
-            speakers = list(G[listener])
-            if not speakers:
-                continue
-
-            labels = defaultdict(int)
-            for speaker in speakers:
-                total = sum(memory[speaker].values())
-                label_probs = [freq / total for freq in memory[speaker].values()]
-                chosen_label = list(memory[speaker].keys())[np.random.multinomial(1, label_probs).argmax()]
-                labels[chosen_label] += 1
-
-            accepted_label = max(labels, key=labels.get)
-            memory[listener][accepted_label] = memory[listener].get(accepted_label, 0) + 1
-
-    for node, mem in memory.items():
-        to_delete = [label for label, freq in mem.items() if freq / float(T + 1) < r]
-        for label in to_delete:
-            del mem[label]
-
-    communities = defaultdict(set)
-    for node, mem in memory.items():
-        for label in mem.keys():
-            communities[label].add(node)
-
-    return [frozenset(nodes) for nodes in communities.values()]
 
 # Read ground truth communities from community.dat
 def load_ground_truth():
@@ -525,11 +493,15 @@ def detect():
     image_paths = []
 
     for i in range(N):
-        if algorithm == "slpa":
+        if algorithm == "slpa" or algorithm == "slpa_cdlib":
             T = int(request.json.get("T", 40))
             r = float(request.json.get("r", 0.3))
-            detected_communities = slpa(G, T, r).communities
+            if algorithm == "slpa":
+                detected_communities = find_communities(G, T, r)
+            else:
+                detected_communities = slpa(G, T, r).communities
             params = {"T": T, "r": r}
+
 
         elif algorithm == "n2vfcm":
             dimensions = int(request.json.get("dimensions", 8))
@@ -584,25 +556,42 @@ def detect():
 
             
         
-        elif algorithm == "ahnlink":
-            ahn_threshold = float(request.json.get("ahn_threshold", 0.2))
-            if ahn_threshold > 0.0:
-                edge2cid, _, _, _, cid2edges, cid2nodes, single_linkage = run_hlc_on_nx_graph(G) #(G, threshold=ahn_threshold)
-            else: 
-                edge2cid, _, _, _, cid2edges, cid2nodes = run_hlc_on_nx_graph(G, threshold=ahn_threshold)
+        elif algorithm == "linkcom":
+            
+            min_com_size = int(request.json.get("ahn_min_com", 2))  
+            method = request.json.get("method", "single")  
+            use_threshold = request.json.get("ahn_use_threshold", False) 
+
+
+            ahn_threshold = float(request.json.get("ahn_threshold", 0.0)) if use_threshold else None
+            print(ahn_threshold)
+            print(method)
+            
+            #edge2cid, _, _,_, cid2edges, cid2nodes, = link_communities(G, threshold=ahn_threshold, linkage=method)
+            edge2cid, best_S, best_D, best_partition, cid2nodes = link_communities(G, threshold=ahn_threshold, linkage=method)
+
+            # Set the parameters based on whether the threshold is used
+            if ahn_threshold is not None:
+                
+                params = {"min": min_com_size, "linkage": method, "t": ahn_threshold}
+            else:
+                edge2cid, _, _,cid2edges, cid2nodes = link_communities(G, threshold=ahn_threshold)
+                params = {"min": min_com_size, "linkage": method}
             #filter out primitive communities
-            detected_communities = [frozenset(nodes) for nodes in cid2nodes.values() if len(nodes) >= 3]
-            params = {"threshold": ahn_threshold}
-        elif algorithm == "hlc":
-            ahn_threshold = float(request.json.get("ahn_threshold", 0.2))
+            detected_communities = [frozenset(nodes) for nodes in cid2nodes.values() if len(nodes) >= min_com_size]
+
+        elif algorithm == "linkcom_original":
+            use_threshold = request.json.get("ahn_original_use_threshold", False) 
+            ahn_threshold = float(request.json.get("ahn_original_threshold", None)) if use_threshold else None
+
             cmd = (
                 ["python3", "ahn_original.py", "-t", str(ahn_threshold), GRAPH_PATH]
-                if ahn_threshold > 0.0
+                if ahn_threshold
                 else ["python3", "ahn_original.py", GRAPH_PATH]
             ) 
             try:
                 subprocess.run(cmd, check=True)
-                # HLC will create an output file like: network_thrS0.5_thrD0.45.edge2comm.txt
+                # linkcom_original will create an output file like: network_thrS0.5_thrD0.45.edge2comm.txt
                 basename = os.path.splitext(os.path.basename(GRAPH_PATH))[0]
     
                 result_file = glob.glob("comm2nodes.txt")
@@ -615,7 +604,7 @@ def detect():
                 detected_communities = read_comm2nodes(result_file)
 
             except subprocess.CalledProcessError:
-                print(f"Failed to run HLC with threshold {ahn_threshold}")
+                print(f"Failed to run linkcom_original with threshold {ahn_threshold}")
                 continue
             
         index = get_next_plot_index()
@@ -666,12 +655,7 @@ def read_comm2nodes(file_path):
                 node_ids = set(map(int, parts[1:]))
                 communities.append(node_ids)
 
-    # Filter out small communities first
     communities = [com for com in communities if len(com) >= 3]
-
-    # Then print the remaining ones
-    for com in communities:
-        print(com)        
 
     return communities
 
@@ -691,7 +675,7 @@ def optimize():
     best_params = None
     best_communities = None
 
-    if algorithm == "hlc":
+    if algorithm == "linkcom_original":
         possible_thresholds = [round(x, 2) for x in list(np.arange(0.1, 0.91, 0.05))]
         for threshold in possible_thresholds:
            
@@ -703,16 +687,14 @@ def optimize():
 
             try:
                 subprocess.run(cmd, check=True)
-                # HLC will create an output file like: network_thrS0.5_thrD0.45.edge2comm.txt
                 basename = os.path.splitext(os.path.basename(GRAPH_PATH))[0]
 
                 result_file = glob.glob("comm2nodes.txt")
                 if not result_file:
                     print("no file")
-                    continue  # skip if no file
+                    continue  
                 result_file = result_file[0]
 
-                 # Load communities
                 detected_communities = read_comm2nodes(result_file)
 
                 result_metrics = compute_metrics(G, detected_communities, ground_truth_communities)
@@ -724,7 +706,7 @@ def optimize():
                     best_communities = detected_communities
 
             except subprocess.CalledProcessError:
-                print(f"Failed to run HLC with threshold {threshold}")
+                print(f"Failed to run linkcom_original with threshold {threshold}")
                 continue
 
     elif algorithm == "slpa":
@@ -742,11 +724,11 @@ def optimize():
                     best_params = {"T": T, "r": r}
                     best_communities = detected_communities
 
-    elif algorithm == "ahnlink":
+    elif algorithm == "linkcom":
         thresholds = [round(x, 2) for x in list(np.arange(0.1, 0.91, 0.05))]
         
         for threshold in thresholds:
-            edge2cid, _, _, _, cid2edges, cid2nodes = run_hlc_on_nx_graph(G, threshold=threshold)
+            edge2cid, best_S, best_D, best_partition, cid2nodes = link_communities(G, threshold=threshold)
             detected_communities = [frozenset(nodes) for nodes in cid2nodes.values() if len(nodes) >= 3]
             result_metrics = compute_metrics(G, detected_communities, ground_truth_communities)
             score = result_metrics.get(metric_to_optimize, 0)
