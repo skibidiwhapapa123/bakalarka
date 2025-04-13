@@ -731,7 +731,7 @@ def optimize():
         thresholds = [round(x, 2) for x in list(np.arange(0.1, 0.91, 0.05))]
         
         for threshold in thresholds:
-            edge2cid, best_S, best_D, best_partition, cid2nodes = link_communities(G, threshold=threshold)
+            edge2cid, best_partition, cid2nodes = link_communities(G, threshold=threshold)
             detected_communities = [frozenset(nodes) for nodes in cid2nodes.values() if len(nodes) >= 3]
             result_metrics = compute_metrics(G, detected_communities, ground_truth_communities)
             score = result_metrics.get(metric_to_optimize, 0)
