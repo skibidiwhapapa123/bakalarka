@@ -571,14 +571,14 @@ def detect():
             print(method)
             
             #edge2cid, _, _,_, cid2edges, cid2nodes, = link_communities(G, threshold=ahn_threshold, linkage=method)
-            edge2cid, best_S, best_D, best_partition, cid2nodes = link_communities(G, threshold=ahn_threshold, linkage=method)
-
+            #edge2cid, best_S, best_D, best_partition, cid2nodes = link_communities(G, threshold=ahn_threshold, linkage=method)
+            
             # Set the parameters based on whether the threshold is used
             if ahn_threshold is not None:
-                
+                edge2cid, cid2edges, cid2nodes = link_communities(G, threshold=ahn_threshold, linkage=method)
                 params = {"min": min_com_size, "linkage": method, "t": ahn_threshold}
             else:
-                edge2cid, _, _,cid2edges, cid2nodes = link_communities(G, threshold=ahn_threshold)
+                edge2cid, _, _,cid2edges, cid2nodes = link_communities(G, threshold=ahn_threshold, linkage=method)
                 params = {"min": min_com_size, "linkage": method}
             #filter out primitive communities
             detected_communities = [frozenset(nodes) for nodes in cid2nodes.values() if len(nodes) >= min_com_size]
