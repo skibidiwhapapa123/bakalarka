@@ -17,6 +17,7 @@ from demonalgo import DemonAlgorithm
 from cdlib import NodeClustering
 from ahn_link import link_communities
 from slpaalgorithm import find_communities
+from slpav2 import SLPA
 from cdlib.algorithms import (
     slpa,
     demon,
@@ -467,6 +468,8 @@ def reset():
     for filepath in glob.glob("static/community_plot_*.png"):
         os.remove(filepath)
     
+    with open(COUNTER_FILE, "w") as f:
+        f.write(str(0))
 
     main_plot = "static/community_plot.png"
     if os.path.exists(main_plot):
