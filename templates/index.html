@@ -373,7 +373,12 @@ async function loadSelectedGraph() {
         method: 'POST',
     });
 
-    // Parse LFR parameters from folder name
+    
+
+
+    if (response.ok) {
+        console.log('good');
+        // Parse LFR parameters from folder name
     const lfrParams = selectedGraph
         .split('_')
         .map(param => param.replace('-', '='))  // optional: turn "k-20" into "k=20" if you use dashes
@@ -408,10 +413,9 @@ async function loadSelectedGraph() {
         newLFRRow.innerHTML = `<td colspan="6"><strong>LFR: ${lfrParams}</strong></td>`;
         table.insertBefore(newLFRRow, table.firstChild);
     }
-
-    if (response.ok) {
-        console.log('good');
         document.getElementById("detect-btn").disabled = false;
+        document.getElementById("export-button").style.display = "block";
+        document.getElementById("reset-button").style.display = "block";
     } else {
         console.log('bad');
         alert('Chyba při načítání grafu.');
