@@ -302,6 +302,16 @@
             <button type="button" id="detect-btn" onclick="detectCommunities()" disabled>Detect Communities</button>
         </form>
     </div>
+    <h1>Select a Graph from History</h1>
+
+    <label for="graphHistorySelect">Choose a graph:</label>
+    <select id="graphHistorySelect">
+        <option value="" disabled selected>Select a graph</option>
+    </select>
+
+    <br>
+    <button id="loadGraphButton" onclick="loadSelectedGraph()">Load Graph</button>
+    
 
     <h2>Community Detection Results</h2>
     <div class="community-results-container">
@@ -328,6 +338,88 @@
 
 
 <script>
+
+
+async function loadGraphHistory() {
+    const selectElement = document.getElementById('graphHistorySelect');
+    
+    // Clear previous options
+    selectElement.innerHTML = ''; 
+
+    try {
+        const response = await fetch('/get_available_graphs');
+        const graphs = await response.json();
+
+        // Populate the select dropdown with available graphs
+        graphs.forEach(graph => {
+            const option = document.createElement('option');
+            option.value = graph; 
+            option.textContent = graph;
+            selectElement.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading graph history:', error);
+        alert('Failed to load graph history. Please try again later.');
+    }
+}
+
+
+loadGraphHistory(); 
+
+
+async function loadSelectedGraph() {
+    const selectedGraph = document.getElementById('graphHistorySelect').value;
+    const response = await fetch(`/load_graph/${selectedGraph}`, {
+        method: 'POST',
+    });
+
+    // Parse LFR parameters from folder name
+    const lfrParams = selectedGraph
+        .split('_')
+        .map(param => param.replace('-', '='))  // optional: turn "k-20" into "k=20" if you use dashes
+        .join('_');  // display nicely as a list
+
+    const detectionResultsDiv = document.getElementById("detection-results");
+
+    if (!detectionResultsDiv.querySelector("#results-table")) {
+        // If table doesn't exist, create it
+        let tableHTML = `
+            <table id="results-table" border="1">
+                <thead>
+                    <tr>
+                        <th>Algorithm</th>
+                        <th>Omega</th>
+                        <th>ONMI</th>
+                        <th>F1</th>
+                        <th>Q_l</th>
+                        <th>Q_s</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="6"><strong>LFR: ${lfrParams}</strong></td></tr>
+                </tbody>
+            </table>
+        `;
+        detectionResultsDiv.innerHTML = tableHTML;
+    } else {
+        // If table already exists, just add the new LFR section
+        let table = detectionResultsDiv.querySelector("#results-table tbody");
+        let newLFRRow = document.createElement("tr");
+        newLFRRow.innerHTML = `<td colspan="6"><strong>LFR: ${lfrParams}</strong></td>`;
+        table.insertBefore(newLFRRow, table.firstChild);
+    }
+
+    if (response.ok) {
+        console.log('good');
+        document.getElementById("detect-btn").disabled = false;
+    } else {
+        console.log('bad');
+        alert('Chyba při načítání grafu.');
+    }
+}
+
+
+
     function toggleParams() {
         const algo = document.getElementById("algorithm").value;
         const nIterationsInput = document.getElementById("N");
@@ -506,6 +598,8 @@
            
         }
 
+        loadGraphHistory();
+
 
         document.getElementById("export-button").style.display = "block";
         document.getElementById("reset-button").style.display = "block";
@@ -617,6 +711,8 @@ function detectCommunities() {
             let algorithmParams = Object.entries(res.params)
                 .map(([key, val]) => `${key}_${val}`)
                 .join("_");
+
+            
 
             let newRow = document.createElement("tr");
             newRow.innerHTML = `

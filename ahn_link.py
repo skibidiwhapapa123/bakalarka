@@ -71,11 +71,17 @@ class HLC:
         while similarities:
             neg_sim, i, j = heapq.heappop(similarities)
             sim = -neg_sim
+            print(sim)
 
             ci = find(i)
             cj = find(j)
             if ci == cj:
                 continue
+
+
+          
+
+            
 
             if threshold is not None and sim < threshold:
                 break
@@ -168,6 +174,8 @@ class HLC:
         while similarities:
             neg_sim, i, j = heapq.heappop(similarities)
             sim = -neg_sim
+
+        
 
             ci = find(i)
             cj = find(j)

@@ -1,4 +1,5 @@
 import os
+import shutil
 import glob
 from pathlib import Path
 import re
@@ -39,6 +40,47 @@ app = Flask(__name__)
 GRAPH_PATH = "network.dat"
 COMMUNITY_PATH = "community.dat"
 COUNTER_FILE = "static/plot_counter.txt"
+LFR_OUTPUT_DIR = 'lfr_output/'
+
+
+@app.route('/get_available_graphs')
+def get_available_graphs_endpoint():
+    graphs = get_available_graphs()  # Funkce pro získání seznamu složek
+    return jsonify(graphs)
+
+# Function to generate a unique folder name by adding an index
+def get_unique_folder_name(base_folder):
+    index = 1
+    folder_name = base_folder
+    while os.path.exists(folder_name):
+        folder_name = f"{base_folder}_{index}"
+        index += 1
+    return folder_name
+
+def get_available_graphs():
+    """Vrátí seznam složek v lfr_output/ (grafy s unikátními názvy)."""
+    return [d for d in os.listdir(LFR_OUTPUT_DIR) if os.path.isdir(os.path.join(LFR_OUTPUT_DIR, d))]
+
+@app.route('/load_graph/<folder_name>', methods=['POST'])
+def load_graph_endpoint(folder_name):
+    # Construct paths for the network.dat and community.dat files in the selected folder
+    folder_path = os.path.join(LFR_OUTPUT_DIR, folder_name)
+    network_file_path = os.path.join(folder_path, 'network.dat')
+    community_file_path = os.path.join(folder_path, 'community.dat')
+
+    # Check if the folder exists and contains the required files
+    if os.path.exists(folder_path) and os.path.exists(network_file_path) and os.path.exists(community_file_path):
+        try:
+            # Copy the network.dat and community.dat files from the selected folder to the root directory
+            shutil.copy(network_file_path, GRAPH_PATH)
+            shutil.copy(community_file_path, COMMUNITY_PATH)
+
+            return 'Graf byl úspěšně načten.', 200
+        except Exception as e:
+            return f'Chyba při načítání grafu: {str(e)}', 400
+    else:
+        return 'Chyba: Soubory neexistují v dané složce.', 400
+
 
 def get_next_plot_index():
     # Read the last index
@@ -164,6 +206,7 @@ def generate_graph():
     if os.path.exists(COMMUNITY_PATH):
         os.remove(COMMUNITY_PATH) 
 
+
     cmd = ["./benchmark"]
 
     required_params = ["N", "k", "maxk", "mu"]
@@ -188,6 +231,17 @@ def generate_graph():
         output = result.stdout.strip()
 
         if os.path.exists(GRAPH_PATH) and os.path.exists(COMMUNITY_PATH):
+
+            base_folder_name = os.path.join(LFR_OUTPUT_DIR, '_'.join(f"{key}_{value}" for key, value in params.items()))
+
+            # Get a unique folder name if the base folder already exists
+            output_folder = get_unique_folder_name(base_folder_name)
+            os.makedirs(output_folder)  # Create the folder
+
+            # Copy the generated files into the unique output folder
+            shutil.copy(GRAPH_PATH, os.path.join(output_folder, 'network.dat'))
+            shutil.copy(COMMUNITY_PATH, os.path.join(output_folder, 'community.dat'))
+
             match = re.search(r"\*{60,}\n(.*?)\*{60,}", output, re.DOTALL)
             info = match.group(1).strip() if match else "No benchmark details found."
             
