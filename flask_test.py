@@ -32,6 +32,8 @@ from cdlib.evaluation import (
     link_modularity
 )
 
+from evaluations import ( shen_modularity, lazar_modularity, NF1, mgh_onmi )
+
 app = Flask(__name__)
 
 GRAPH_PATH = "network.dat"
@@ -52,79 +54,7 @@ def get_next_plot_index():
 
     return index
 
-def compute_onmi(graph, detected_communities, ground_truth_communities):
-    """
-    Compute Overlapping Normalized Mutual Information (oNMI)
-    between detected and ground truth communities.
-    """
 
-    detected_nc = NodeClustering(detected_communities, graph, "Detected")
-    ground_truth_nc = NodeClustering(ground_truth_communities, graph, "Ground Truth")
-
-    onmi_score = overlapping_normalized_mutual_information_MGH(detected_nc, ground_truth_nc)
-    
-    return onmi_score.score
-
-
-# Function to run LFR benchmark
-"""
-def generate_graph(params):
-
-    # Check if the graph and community files already exist
-    if os.path.exists(GRAPH_PATH):
-        os.remove(GRAPH_PATH)  # Delete the existing network.dat
-    if os.path.exists(COMMUNITY_PATH):
-        os.remove(COMMUNITY_PATH)  # Delete the existing community.dat
-
-    cmd = ["./benchmark"]
-
-    # Required parameters
-    required_params = ["N", "k", "maxk", "mu"]
-    
-    # Add required parameters
-    for param in required_params:
-        if param in params and params[param].strip():
-            cmd.append(f"-{param}")
-            cmd.append(str(params[param]))
-        else:
-            return f"Error: Missing required parameter '{param}'"
-
-    # Add optional parameters if provided
-    optional_params = ["t1", "t2", "minc", "maxc", "on", "om"]
-    for param in optional_params:
-        if param in params and params[param].strip():
-            cmd.append(f"-{param}")
-            cmd.append(str(params[param]))
-
-    try:
-        # Run the command and capture both stdout & stderr
-        result = subprocess.run(cmd, shell=False, capture_output=True, text=True, check=False)
-        output = result.stdout.strip()  # Remove leading/trailing spaces
-
-        # If both files exist, extract useful benchmark info
-        if os.path.exists(GRAPH_PATH) and os.path.exists(COMMUNITY_PATH):
-            match = re.search(r"\*{60,}\n(.*?)\*{60,}", output, re.DOTALL)
-            info = match.group(1).strip() if match else "No benchmark details found."
-            return True, output, info  # Successful case
-
-        else:
-            # If files are missing, assume failure & return stderr
-            error_message = result.stderr.strip() if result.stderr else "Unknown error occurred."
-            return False, output, error_message  # Failed case
-
-    except Exception as e:
-        return "", f"Exception occurred: {str(e)}"  # Handle unexpected errors
-
-    #except subprocess.CalledProcessError as e:
-    #    return e.stdout + "\n" + e.stderr, "Error: Benchmark execution failed!"
-    
-    subprocess.run(cmd, check=False )
-
-    if os.path.exists(GRAPH_PATH) and os.path.exists(COMMUNITY_PATH):
-        return "Graph successfully generated!"
-    else:
-        return "Error: Graph generation failed."
-    """
 
 def align_partitions(detected, ground_truth):
     """ Ensure both partitions contain the same nodes. """
@@ -142,13 +72,25 @@ def align_partitions(detected, ground_truth):
 
     return detected, ground_truth
 
+
 def compute_metrics(graph, detected_communities, ground_truth_communities):
     """
     Compute evaluation metrics for community detection.
     """
+    
+    #print(ground_truth_communities)
 
+    shen = shen_modularity(graph, detected_communities)
+    lazar_score = lazar_modularity(graph, detected_communities)
+    my_f1_score = NF1(detected_communities, ground_truth_communities).get_f1()
+    my_onmi = mgh_onmi(detected_communities, ground_truth_communities)
 
+    #my_f1_score = f1score(detected_communities, ground_truth_communities)
+    
+    
+   
     l_detected_nc, l_ground_truth_nc = align_partitions(detected_communities, ground_truth_communities)
+
 
     detected_nc = NodeClustering([list(comm) for comm in l_detected_nc], graph, "Detected")
     ground_truth_nc = NodeClustering(l_ground_truth_nc, graph, "Ground Truth")
@@ -159,11 +101,25 @@ def compute_metrics(graph, detected_communities, ground_truth_communities):
     modularity_score = modularity_overlap(graph, detected_nc).score
     omega_score = omega(detected_nc, ground_truth_nc).score
 
+
+    #print("Shen: ")
+    #print(shen)
+    #print("Lazar: ")
+    #print(lazar_score)
+    #print(modularity_score)
+    #print("F1")
+    #print(f1_score)
+    #print(my_f1_score)
+    #print("ONMI")
+    #print(onmi_score)
+    #print(my_onmi)
+
     return {
         "onmi": round(onmi_score,4),
         "omega": round(omega_score,4),
         "f1": round(f1_score, 4),
-        "modularity": round(modularity_score, 4)
+        "lazar": round(lazar_score, 4),
+        "shen": round(shen, 4)
     }
 
 
@@ -180,79 +136,9 @@ def load_ground_truth():
             for comm in communities:
                 ground_truth[comm].add(node)
 
-    return [frozenset(nodes) for nodes in ground_truth.values()]
-
-"""
-@app.route("/generate", methods=["POST"])
-def generate_graph():
-    data = request.json  # Get parameters from frontend
-    cmd = ["./benchmark", f"-N {data['N']}", f"-k {data['k']}", f"-maxk {data['maxk']}", f"-mu {data['mu']}"]
-
-    success, output, message = run_lfr_benchmark(cmd)
-
-    return jsonify({
-        "success": success,
-        "message": message
-    })
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    message = ""
-    benchmark_info = ""
-    full_output = ""
-    if request.method == "POST":
-        if "generate" in request.form:
-            params = {key: request.form[key] for key in request.form}
-
-            full_output, benchmark_info = generate_graph(params)
-
-            if os.path.exists("network.dat") and os.path.exists("community.dat"):
-                message = "Graph successfully generated!"
-            else:
-                message = "Error: Graph generation failed! Check parameters."
-
-            return render_template("index.html", message=message, benchmark_info=benchmark_info, full_output=full_output)
-
-        if "detect" in request.form:
-            G = nx.read_edgelist(GRAPH_PATH, nodetype=int)
-            ground_truth_communities = load_ground_truth()
-
-            algorithm = request.form["algorithm"]
-
-            if algorithm == "slpa":
-                T = int(request.form.get("T", 40))
-                r = float(request.form.get("r", 0.3))
-                detected_communities = find_communities(G, T, r)
-
-            elif algorithm == "node2vec_fcm":
-                dimensions = int(request.form.get("dimensions", 4))
-                walk_length = int(request.form.get("walk_length", 30))
-                num_walks = int(request.form.get("num_walks", 30))
-                clusters = int(request.form.get("clusters", 4))
-                detected_communities = node2vec_fuzzy_cmeans(G, dimensions, walk_length, num_walks, clusters)
-
-            elif algorithm == "demon":
-                epsilon = float(request.form['epsilon'])
-                min_community_size = int(request.form['min_community_size'])
-                demon_algorithm = DemonAlgorithm(epsilon=epsilon, min_community_size=min_community_size)
-                detected_communities = demon_algorithm.execute(G)
-            
-        
-
-            result_metrics = compute_metrics(G, detected_communities, ground_truth_communities)
-            
+    return [set(nodes) for nodes in ground_truth.values()]
 
 
-            plot_communities(G, ground_truth_communities, detected_communities, result_metrics)
-            return render_template("index.html", message="Detection complete! Check the plots.")
-    else:
-        # When the page is first opened (GET request), check if parameters are present
-        if not request.form.get("algorithm"):
-            message = "SLPA algorithm is selected by default"
-
-    return render_template("index.html", message="")
-
-"""
 
 @app.route("/check_glibc")
 def check_glibc():
@@ -266,70 +152,6 @@ def check_glibc():
 def index():
     return render_template("index.html")
 
-"""
-@app.route('/generate', methods=['POST'])
-def generate_graph():
-    
-    global LFR_PARAMETERS
-    params = request.get_json()
-    LFR_PARAMETERS = params.copy() 
-
-    # Check if the graph and community files already exist
-    if os.path.exists(GRAPH_PATH):
-        os.remove(GRAPH_PATH)  # Delete the existing network.dat
-    if os.path.exists(COMMUNITY_PATH):
-        os.remove(COMMUNITY_PATH)  # Delete the existing community.dat
-
-    cmd = ["./benchmark"]
-
-    # Required parameters
-    required_params = ["N", "k", "maxk", "mu"]
-
-    # Add required parameters
-    for param in required_params:
-        if param in params and params[param].strip():
-            cmd.append(f"-{param}")
-            cmd.append(str(params[param]))
-        else:
-            return jsonify({"success": False, "message": f"Error: Missing required parameter '{param}'"})
-
-    # Add optional parameters if provided
-    optional_params = ["t1", "t2", "minc", "maxc", "on", "om"]
-    for param in optional_params:
-        if param in params and params[param].strip():
-            cmd.append(f"-{param}")
-            cmd.append(str(params[param]))
-
-    try:
-        # Run the command and capture both stdout & stderr
-        result = subprocess.run(cmd, shell=False, capture_output=True, text=True, check=False)
-        output = result.stdout.strip()  # Remove leading/trailing spaces
-
-        # If both files exist, extract useful benchmark info
-        if os.path.exists(GRAPH_PATH) and os.path.exists(COMMUNITY_PATH):
-            match = re.search(r"\*{60,}\n(.*?)\*{60,}", output, re.DOTALL)
-            info = match.group(1).strip() if match else "No benchmark details found."
-            
-            # Get the number of communities
-            ground_truth_communities = load_ground_truth()
-            num_communities = len(ground_truth_communities)
-
-            return jsonify({
-                "success": True,
-                "message": "Graph successfully generated!",
-                "benchmark_info": info,
-                "num_communities": num_communities  # Return the number of communities
-            })
-
-        else:
-            # If files are missing, assume failure & return stderr
-            error_message = result.stderr.strip() if result.stderr else "Unknown error occurred."
-            return jsonify({"success": False, "message": f"Error: {error_message}"})
-
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Exception occurred: {str(e)}"})
-
-"""
 
 @app.route('/generate', methods=['POST'])
 def generate_graph():
@@ -337,15 +159,13 @@ def generate_graph():
     params = request.get_json()
     LFR_PARAMETERS = params.copy()
 
-    # Check if the graph and community files already exist
     if os.path.exists(GRAPH_PATH):
-        os.remove(GRAPH_PATH)  # Delete the existing network.dat
+        os.remove(GRAPH_PATH) 
     if os.path.exists(COMMUNITY_PATH):
-        os.remove(COMMUNITY_PATH)  # Delete the existing community.dat
+        os.remove(COMMUNITY_PATH) 
 
     cmd = ["./benchmark"]
 
-    # Required parameters
     required_params = ["N", "k", "maxk", "mu"]
 
     # Add required parameters
@@ -364,30 +184,25 @@ def generate_graph():
             cmd.append(str(params[param]))
 
     try:
-        # Run the command and capture both stdout & stderr
         result = subprocess.run(cmd, shell=False, capture_output=True, text=True, check=False)
-        output = result.stdout.strip()  # Remove leading/trailing spaces
+        output = result.stdout.strip()
 
-        # If both files exist, extract useful benchmark info
         if os.path.exists(GRAPH_PATH) and os.path.exists(COMMUNITY_PATH):
             match = re.search(r"\*{60,}\n(.*?)\*{60,}", output, re.DOTALL)
             info = match.group(1).strip() if match else "No benchmark details found."
             
-            # Get the number of communities
             ground_truth_communities = load_ground_truth()
             num_communities = len(ground_truth_communities)
 
-            # Return the LFR parameters along with the other results
             return jsonify({
                 "success": True,
                 "message": "Graph successfully generated!",
                 "benchmark_info": info,
-                "num_communities": num_communities,  # Return the number of communities
-                "LFR_parameters": LFR_PARAMETERS  # Return the LFR parameters to use on the frontend
+                "num_communities": num_communities,  
+                "LFR_parameters": LFR_PARAMETERS 
             })
 
         else:
-            # If files are missing, assume failure & return stderr
             error_message = result.stderr.strip() if result.stderr else "Unknown error occurred."
             return jsonify({"success": False, "message": f"Error: {error_message}"})
 
@@ -465,13 +280,13 @@ def run_oslom(graph_path: str, directed=False, extra_args=None, copra_runs=0,
 @app.route("/reset", methods=["POST"])
 def reset():
 
-    for filepath in glob.glob("static/community_plot_*.png"):
+    for filepath in glob.glob("static/community_plot_*.svg"):
         os.remove(filepath)
     
     with open(COUNTER_FILE, "w") as f:
         f.write(str(0))
 
-    main_plot = "static/community_plot.png"
+    main_plot = "static/community_plot.svg"
     if os.path.exists(main_plot):
         os.remove(main_plot)
 
@@ -487,13 +302,9 @@ def detect():
 
     algorithm = request.json.get("algorithm")
     N = int(request.json.get("N", 1))
-    best_by = request.json.get("best_by", "modularity")  # Metric chosen for selecting best result
     params = {}
 
-    best_result = None
-    best_score = float("-inf")  # Best score for the chosen metric
     all_results = []
-    image_paths = []
 
     for i in range(N):
         if algorithm == "slpa" or algorithm == "slpa_cdlib":
@@ -505,7 +316,6 @@ def detect():
                 detected_communities = slpa(G, T, r).communities
             params = {"T": T, "r": r}
 
-
         elif algorithm == "n2vfcm":
             dimensions = int(request.json.get("dimensions", 8))
             walk_length = int(request.json.get("walk_length", 50))
@@ -516,17 +326,19 @@ def detect():
             m = float(request.json.get("m", 1.5))
             threshold = float(request.json.get("threshold", 0.3))
             detected_communities = node2vec_fuzzy_cmeans(G, dimensions, walk_length, num_walks, clusters, p, q, m, threshold)
-            params = {"dim": dimensions, "wl": walk_length, "nw": num_walks, "p" : p, "q": q, "c": clusters, "t": threshold }
+            params = {"dim": dimensions, "wl": walk_length, "nw": num_walks, "p": p, "q": q, "c": clusters, "t": threshold}
 
         elif algorithm == "demon":
             epsilon = float(request.json.get("epsilon", 0.1))
             min_community_size = int(request.json.get("min_community_size", 3))
             detected_communities = DemonAlgorithm(epsilon=epsilon, min_community_size=min_community_size).execute(G)
             params = {"epsilon": epsilon, "mincomsize": min_community_size}
+
         elif algorithm == "conga":
             number_communities = int(request.json.get("number_community", 4))
             detected_communities = conga(G, number_communities).communities
-            params = {"number_communities": number_communities} 
+            params = {"number_communities": number_communities}
+
         elif algorithm == "oslom":
             oslom_f_l_i = int(request.json.get("oslom_f_l_i", 10))
             oslom_h_l_i = int(request.json.get("oslom_h_l_i", 50))
@@ -535,10 +347,9 @@ def detect():
             oslom_louvain = int(request.json.get("oslom_louvain", 0))
             oslom_copra = int(request.json.get("oslom_copra", 0))
             oslom_singler = int(request.json.get("oslom_singler", 0))
-
             detected_communities = run_oslom(
                 GRAPH_PATH,
-                directed=False, 
+                directed=False,
                 oslom_f_l_i=oslom_f_l_i,
                 oslom_h_l_i=oslom_h_l_i,
                 oslom_p_v_t=oslom_p_v_t,
@@ -548,84 +359,54 @@ def detect():
                 oslom_singler=oslom_singler,
             )
             params = {
-                "r": oslom_f_l_i,
-                "hr": oslom_h_l_i,
-                "t": oslom_p_v_t,
-                "i": oslom_infomap,
-                "l": oslom_louvain,
-                "c": oslom_copra,
-                "s": oslom_singler
+                "r": oslom_f_l_i, "hr": oslom_h_l_i, "t": oslom_p_v_t,
+                "i": oslom_infomap, "l": oslom_louvain, "c": oslom_copra, "s": oslom_singler
             }
 
-            
-        
         elif algorithm == "linkcom":
-            
-            min_com_size = int(request.json.get("ahn_min_com", 2))  
-            method = request.json.get("method", "single")  
-            use_threshold = request.json.get("ahn_use_threshold", False) 
-
-
+            min_com_size = int(request.json.get("ahn_min_com", 2))
+            method = request.json.get("method", "single")
+            use_threshold = request.json.get("ahn_use_threshold", False)
             ahn_threshold = float(request.json.get("ahn_threshold", 0.0)) if use_threshold else None
-            print(ahn_threshold)
-            print(method)
-            
-            #edge2cid, _, _,_, cid2edges, cid2nodes, = link_communities(G, threshold=ahn_threshold, linkage=method)
-            #edge2cid, best_S, best_D, best_partition, cid2nodes = link_communities(G, threshold=ahn_threshold, linkage=method)
-            
-            # Set the parameters based on whether the threshold is used
             if ahn_threshold is not None:
                 edge2cid, cid2edges, cid2nodes = link_communities(G, threshold=ahn_threshold, linkage=method)
                 params = {"min": min_com_size, "linkage": method, "t": ahn_threshold}
             else:
-                edge2cid, _, _,cid2edges, cid2nodes = link_communities(G, threshold=ahn_threshold, linkage=method)
+                edge2cid, _, _, cid2edges, cid2nodes = link_communities(G, threshold=ahn_threshold, linkage=method)
                 params = {"min": min_com_size, "linkage": method}
-            #filter out primitive communities
             detected_communities = [frozenset(nodes) for nodes in cid2nodes.values() if len(nodes) >= min_com_size]
+            #print(detected_communities)
 
         elif algorithm == "linkcom_original":
-            use_threshold = request.json.get("ahn_original_use_threshold", False) 
+            use_threshold = request.json.get("ahn_original_use_threshold", False)
             ahn_threshold = float(request.json.get("ahn_original_threshold", None)) if use_threshold else None
-
             cmd = (
                 ["python3", "ahn_original.py", "-t", str(ahn_threshold), GRAPH_PATH]
                 if ahn_threshold
                 else ["python3", "ahn_original.py", GRAPH_PATH]
-            ) 
+            )
             try:
                 subprocess.run(cmd, check=True)
-                # linkcom_original will create an output file like: network_thrS0.5_thrD0.45.edge2comm.txt
-                basename = os.path.splitext(os.path.basename(GRAPH_PATH))[0]
-    
                 result_file = glob.glob("comm2nodes.txt")
                 if not result_file:
                     print("no file")
-                    continue  # skip if no file
+                    continue
                 result_file = result_file[0]
-
-                 # Load communities
                 detected_communities = read_comm2nodes(result_file)
-
             except subprocess.CalledProcessError:
                 print(f"Failed to run linkcom_original with threshold {ahn_threshold}")
                 continue
-            
+
+        # Plot communities
         index = get_next_plot_index()
         image_path = plot_communities(G, ground_truth_communities, detected_communities, index)
+        image_url = url_for("static", filename=f"community_plot_{index}.svg")
 
-        image_url = url_for("static", filename=f"community_plot_{index}.png")
-        image_paths.append({
-            "image_url": image_url,
-            "index": index
-        })
-
-        
+        # Metrics
         result_metrics = compute_metrics(G, detected_communities, ground_truth_communities)
-        result_metrics_rounded = {
-            k: round(v, 2) for k, v in result_metrics.items()
-        }
+        result_metrics_rounded = {k: round(v, 2) for k, v in result_metrics.items()}
 
-        score = result_metrics[best_by]  # Get the score based on the selected metric
+        # Store results
         all_results.append({
             "algorithm": algorithm,
             "params": params,
@@ -633,21 +414,12 @@ def detect():
             **result_metrics_rounded
         })
 
-        # Check if this result is the best based on the chosen metric
-        if score > best_score:
-            best_score = score
-            best_result = detected_communities
-            best_result_metrics = result_metrics_rounded
-
-
     return jsonify({
         "success": True,
-        "message": f"{algorithm} run {N} times. With {best_by} {best_score}.",
-        "image_url": image_url,
-        "results": all_results,
-        "best_metric": best_by,
-        "best_score": best_score
+        "message": f"{algorithm} run {N} times.",
+        "results": all_results
     })
+
 
 def read_comm2nodes(file_path):
     communities = []
@@ -672,7 +444,7 @@ def optimize():
     ground_truth_communities = load_ground_truth()
 
     algorithm = request.json.get("algorithm", "slpa") 
-    metric_to_optimize = request.json.get('metric', 'modularity')
+    metric_to_optimize = request.json.get('metric', 'lazar')
 
     best_score = float('-inf')
     best_params = None
@@ -802,8 +574,8 @@ def plot_communities(G, ground_truth, detected, index=None):
     draw_colored_communities(G, detected, pos, ax=axes[1])
 
     plt.tight_layout()
-    filename = f"static/community_plot_{index}.png" if index is not None else "static/community_plot.png"
-    plt.savefig(filename)
+    filename = f"static/community_plot_{index}.svg" if index is not None else "static/community_plot.svg"
+    plt.savefig(filename, format='svg')
     plt.close()
     return filename
 

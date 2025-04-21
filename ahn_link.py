@@ -1,4 +1,4 @@
-import networkx as nx
+import heapq
 from collections import defaultdict
 from itertools import combinations
 
@@ -11,18 +11,14 @@ class HLC:
     def edge_similarity(self, e1, e2):
         i, j = e1
         k, l = e2
-
         if len({i, j, k, l}) > 3:
             return 0.0
-
         u = j if i in (k, l) else i
         v = l if k in (i, j) else k
-
         Nu = self.adj[u] | {u}
         Nv = self.adj[v] | {v}
         I = Nu & Nv
         U = Nu | Nv
-
         return len(I) / len(U) if U else 0.0
 
     def partition_density(self, cid2edges):
@@ -34,27 +30,17 @@ class HLC:
             nodes = {i for e in edges for i in e}
             n = len(nodes)
             l = len(edges)
-            D += (l * (l - n + 1)) / ((n - 2) * (n - 1)) if n > 2 else 0
+            if n > 2:
+                D += (l * (l - n + 1)) / ((n - 2) * (n - 1))
         return (2 / m) * D if m else 0
 
-    def linkage_clustering(self, linkage='single', threshold=None):
-        similarities = []
+    def single_linkage(self, threshold=None):
         edge_index = {tuple(sorted(edge)): idx for idx, edge in enumerate(self.edges)}
+        num_edges = len(self.edges)
 
-        for node in self.adj:
-            neighbors = list(self.adj[node])
-            for u, v in combinations(neighbors, 2):
-                e1 = tuple(sorted((node, u)))
-                e2 = tuple(sorted((node, v)))
-                if e1 in edge_index and e2 in edge_index:
-                    sim = self.edge_similarity(e1, e2)
-                    similarities.append((sim, edge_index[e1], edge_index[e2]))
-
-        similarities.sort(reverse=True)
-
-        parent = list(range(len(self.edges)))
-        cluster_edges = {i: {i} for i in range(len(self.edges))}
-        edge_sims = {frozenset((i, j)): sim for sim, i, j in similarities}
+        # Initial clusters
+        clusters = {i: {i} for i in range(num_edges)}
+        parent = list(range(num_edges))
 
         def find(x):
             while parent[x] != x:
@@ -62,72 +48,185 @@ class HLC:
                 x = parent[x]
             return x
 
-        def cluster_similarity(c1, c2):
-            sims = []
-            for e1 in cluster_edges[c1]:
-                for e2 in cluster_edges[c2]:
-                    if e1 == e2:
-                        continue
-                    key = frozenset((e1, e2))
-                    if key in edge_sims:
-                        sims.append(edge_sims[key])
-            if not sims:
-                return 0.0
-            if linkage == 'single':
-                return max(sims)
-            elif linkage == 'complete':
-                return min(sims)
-            elif linkage == 'average':
-                return sum(sims) / len(sims)
-            else:
-                raise ValueError(f"Unknown linkage method: {linkage}")
+        # Compute initial edge similarities
+        similarities = []
+        edge_sims = {}
+        for node in self.adj:
+            neighbors = list(self.adj[node])
+            for u, v in combinations(neighbors, 2):
+                e1 = tuple(sorted((node, u)))
+                e2 = tuple(sorted((node, v)))
+                if e1 in edge_index and e2 in edge_index:
+                    i, j = edge_index[e1], edge_index[e2]
+                    sim = self.edge_similarity(e1, e2)
+                    if sim > 0:
+                        key = frozenset((i, j))
+                        edge_sims[key] = sim
+                        heapq.heappush(similarities, (-sim, i, j))  # max-heap via negative sim
 
         best_D = 0
         best_S = 0
         best_partition = None
 
-        for sim, i, j in similarities:
+        while similarities:
+            neg_sim, i, j = heapq.heappop(similarities)
+            sim = -neg_sim
+
             ci = find(i)
             cj = find(j)
             if ci == cj:
                 continue
-            sim_score = cluster_similarity(ci, cj)
-            if threshold is not None and sim_score < threshold:
+
+            if threshold is not None and sim < threshold:
                 break
+
             # Merge cj into ci
             parent[cj] = ci
-            cluster_edges[ci].update(cluster_edges[cj])
-            del cluster_edges[cj]
+            clusters[ci].update(clusters[cj])
+            del clusters[cj]
 
+            # Update similarities between new cluster and all others
+            for ck in list(clusters.keys()):
+                if ck == ci:
+                    continue
+                min_sim = float('-inf')
+                for e1 in clusters[ci]:
+                    for e2 in clusters[ck]:
+                        key = frozenset((e1, e2))
+                        if key in edge_sims:
+                            min_sim = max(min_sim, edge_sims[key])
+                if min_sim != float('-inf'):
+                    heapq.heappush(similarities, (-min_sim, ci, ck))
+
+            # Track best partition density if threshold not set
             if threshold is None:
                 cid2edges = defaultdict(list)
-                for idx in range(len(self.edges)):
+                for idx in range(num_edges):
                     cid = find(idx)
                     cid2edges[cid].append(self.edges[idx])
                 D = self.partition_density(cid2edges)
                 if D > best_D:
                     best_D = D
-                    best_S = sim_score
+                    best_S = sim
                     best_partition = dict(cid2edges)
 
+        # Final partition (threshold-based or best-D)
         if threshold is not None:
             cid2edges = defaultdict(list)
-            for idx in range(len(self.edges)):
+            for idx in range(num_edges):
                 cid = find(idx)
                 cid2edges[cid].append(self.edges[idx])
-            edge2cid = {tuple(sorted(e)): cid for cid, edges in cid2edges.items() for e in edges}
-            cid2nodes = {cid: list({i for e in edges for i in e}) for cid, edges in cid2edges.items()}
+        else:
+            cid2edges = best_partition or defaultdict(list)
+            if not cid2edges:
+                for idx, edge in enumerate(self.edges):
+                    cid2edges[idx].append(edge)
+
+        edge2cid = {tuple(sorted(e)): cid for cid, edges in cid2edges.items() for e in edges}
+        cid2nodes = {cid: list({i for e in edges for i in e}) for cid, edges in cid2edges.items()}
+
+        if threshold is None:
+            print("# D_max = %f\n# S_max = %f" % (best_D, best_S))
+            return edge2cid, best_S, best_D, dict(cid2edges), cid2nodes
+        else:
             return edge2cid, dict(cid2edges), cid2nodes
 
-        if best_partition is None:
-            best_partition = defaultdict(list)
-            for idx, edge in enumerate(self.edges):
-                best_partition[idx].append(edge)
+    def complete_linkage(self, threshold=None):
+        edge_index = {tuple(sorted(edge)): idx for idx, edge in enumerate(self.edges)}
+        num_edges = len(self.edges)
 
-        edge2cid = {tuple(sorted(e)): cid for cid, edges in best_partition.items() for e in edges}
-        cid2nodes = {cid: list({i for e in edges for i in e}) for cid, edges in best_partition.items()}
-        print("# D_max = %f\n# S_max = %f" % (best_D, best_S))
-        return edge2cid, best_S, best_D, dict(best_partition), cid2nodes
+        # Initial clusters
+        clusters = {i: {i} for i in range(num_edges)}
+        parent = list(range(num_edges))
+
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        # Compute initial edge similarities
+        similarities = []
+        edge_sims = {}
+        for node in self.adj:
+            neighbors = list(self.adj[node])
+            for u, v in combinations(neighbors, 2):
+                e1 = tuple(sorted((node, u)))
+                e2 = tuple(sorted((node, v)))
+                if e1 in edge_index and e2 in edge_index:
+                    i, j = edge_index[e1], edge_index[e2]
+                    sim = self.edge_similarity(e1, e2)
+                    if sim > 0:
+                        key = frozenset((i, j))
+                        edge_sims[key] = sim
+                        heapq.heappush(similarities, (-sim, i, j))  # max-heap via negative sim
+
+        best_D = 0
+        best_S = 0
+        best_partition = None
+
+        while similarities:
+            neg_sim, i, j = heapq.heappop(similarities)
+            sim = -neg_sim
+
+            ci = find(i)
+            cj = find(j)
+            if ci == cj:
+                continue
+
+            if threshold is not None and sim < threshold:
+                break
+
+            # Merge cj into ci
+            parent[cj] = ci
+            clusters[ci].update(clusters[cj])
+            del clusters[cj]
+
+            # Update similarities between new cluster and all others
+            for ck in list(clusters.keys()):
+                if ck == ci:
+                    continue
+                min_sim = float('-inf')
+                for e1 in clusters[ci]:
+                    for e2 in clusters[ck]:
+                        key = frozenset((e1, e2))
+                        if key in edge_sims:
+                            min_sim = min(min_sim, edge_sims[key])
+                if min_sim != float('-inf'):
+                    heapq.heappush(similarities, (-min_sim, ci, ck))
+
+            # Track best partition density if threshold not set
+            if threshold is None:
+                cid2edges = defaultdict(list)
+                for idx in range(num_edges):
+                    cid = find(idx)
+                    cid2edges[cid].append(self.edges[idx])
+                D = self.partition_density(cid2edges)
+                if D > best_D:
+                    best_D = D
+                    best_S = sim
+                    best_partition = dict(cid2edges)
+
+        # Final partition (threshold-based or best-D)
+        if threshold is not None:
+            cid2edges = defaultdict(list)
+            for idx in range(num_edges):
+                cid = find(idx)
+                cid2edges[cid].append(self.edges[idx])
+        else:
+            cid2edges = best_partition or defaultdict(list)
+            if not cid2edges:
+                for idx, edge in enumerate(self.edges):
+                    cid2edges[idx].append(edge)
+
+        edge2cid = {tuple(sorted(e)): cid for cid, edges in cid2edges.items() for e in edges}
+        cid2nodes = {cid: list({i for e in edges for i in e}) for cid, edges in cid2edges.items()}
+
+        if threshold is None:
+            print("# D_max = %f\n# S_max = %f" % (best_D, best_S))
+            return edge2cid, best_S, best_D, dict(cid2edges), cid2nodes
+        else:
+            return edge2cid, dict(cid2edges), cid2nodes
 
 
 
@@ -149,4 +248,7 @@ def link_communities(G, threshold=None, linkage="single"):
     adj = {i: set(G.neighbors(i)) for i in G.nodes()}
     edges = list(G.edges())
     hlc = HLC(adj, edges)
-    return hlc.linkage_clustering(linkage=linkage, threshold=threshold)
+    if linkage == "single":
+        return hlc.single_linkage(threshold=threshold)
+    else:
+        return hlc.complete_linkage(threshold=threshold)

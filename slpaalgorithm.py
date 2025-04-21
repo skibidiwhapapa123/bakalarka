@@ -42,7 +42,7 @@ def find_communities(G, T, r):
     for i, comm1 in enumerate(community_list):
         for j, comm2 in enumerate(community_list):
             if i != j and comm1.issubset(comm2):
-                to_delete.add(frozenset(comm1))  # Mark comm1 for deletion
+                to_delete.add(frozenset(comm1))
 
     # Remove the nested communities
     final_communities = [comm for comm in community_list if frozenset(comm) not in to_delete]

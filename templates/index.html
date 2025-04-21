@@ -115,13 +115,14 @@
         <p id="message"></p>
         <button id="show-more-btn" onclick="toggleMoreInfo()">Show More</button>
     </div>
-    <div id="best-params"></div>
+    
     
     <div id="more-info" style="display:none;">
         <h3>Benchmark Info</h3>
         <pre id="benchmark-info"></pre>
     </div>
     
+    <div id="best-params"></div>
 
     <div class="container">
         <!-- Graph Generation Form -->
@@ -161,7 +162,7 @@
         </form>
 
         
-        <div>
+        <div class="optimal_params">
             <label for="algorithm-select">Select Algorithm:</label>
             <select id="algorithm-select">
                 <option value="slpa">SLPA</option>
@@ -171,7 +172,7 @@
             <br/>
             <label for="metric-select">Select Metric:</label>
             <select id="metric-select">
-                <option value="modularity">Modularity</option>
+                <option value="lazar">Q_lazar</option>
                 <option value="onmi">ONMI</option>
                 <option value="f1">F1 Score</option>
                 <option value="omega">Omega</option>
@@ -179,6 +180,8 @@
             <br>
             <button id="optimize-slpa-btn" disabled>Optimize</button>
         </div>
+
+       
         
        
 
@@ -263,7 +266,7 @@
                 <label for="num_walks">FCM m:</label>
                 <input type="number" name="m" value="1.5"><br>
 
-                <label for="threshold">FCM m:</label>
+                <label for="threshold">FCM threshold:</label>
                 <input type="number" name="threshold" value="0.3"><br>
 
                 <label for="clusters">FCM Clusters:</label>
@@ -290,7 +293,7 @@
             <br/>
             <label for="select-metric" id="metric-label" style="display: none;">Select best by:</label>
             <select id="select-metric" style="display: none;">
-                <option value="modularity">Modularity</option>
+                <option value="lazar">Q_lazar</option>
                 <option value="onmi">ONMI</option>
                 <option value="f1">F1 Score</option>
                 <option value="omega">Omega</option>
@@ -483,12 +486,13 @@
                             <th>Algorithm</th>
                             <th>Omega</th>
                             <th>ONMI</th>
-                            <th>F1-score</th>
-                            <th>Modularity</th>
+                            <th>F1</th>
+                            <th>Q_l</th>
+                            <th>Q_s</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colspan="5"><strong>LFR_${lfrParams}</strong></td></tr>
+                        <tr><td colspan="6"><strong>LFR_${lfrParams}</strong></td></tr>
                     </tbody>
                 </table>
             `;
@@ -497,7 +501,7 @@
             // If table already exists, just add the new LFR section
             let table = detectionResultsDiv.querySelector("#results-table tbody");
             let newLFRRow = document.createElement("tr");
-            newLFRRow.innerHTML = `<td colspan="5"><strong>LFR_${lfrParams}</strong></td>`;
+            newLFRRow.innerHTML = `<td colspan="6"><strong>LFR_${lfrParams}</strong></td>`;
             table.insertBefore(newLFRRow, table.firstChild); 
            
         }
@@ -533,6 +537,8 @@ function showPlot(imageUrl) {
 
 
 function detectCommunities() {
+
+    document.getElementById("best-params").innerText = "";
     document.getElementById("message").innerText = "Algorithm running...";
     document.getElementById("detect-btn").disabled = true; 
     var formData = {
@@ -618,7 +624,8 @@ function detectCommunities() {
                 <td>${res.omega}</td>
                 <td>${res.onmi}</td>
                 <td>${res.f1}</td>
-                <td>${res.modularity}</td>
+                <td>${res.lazar}</td>
+                <td>${res.shen}</td>
                 <td><button onclick="showPlot('${res.image_url}')">Show</button></td>
             `;
 
@@ -650,7 +657,7 @@ function exportToLatex() {
 
     let latexCode = "\\begin{table}[h]\n\\centering\n\\begin{tabular}{|l|c|c|c|c|}\n\\toprule\n";
     
-    let headers = ["Algorithm", "ONMI", "F1-score", "Omega", "Modularity"];
+    let headers = ["Algorithm", "ONMI", "F1-score", "Omega", "Q_lazar"];
     latexCode += headers.join(" & ") + " \\\\\n\\midrule\n";
 
     let rows = table.querySelectorAll("tbody tr");
