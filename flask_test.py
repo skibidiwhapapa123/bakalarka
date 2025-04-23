@@ -572,7 +572,7 @@ def optimize():
 
         for T in possible_T:
             for r in possible_r:
-                detected_communities = slpa(G, T, r).communities
+                detected_communities = find_communities(G, T, r)
                 result_metrics = compute_metrics(G, detected_communities, ground_truth_communities)
                 score = result_metrics.get(metric_to_optimize, 0)
 
