@@ -2,52 +2,76 @@ import networkx as nx
 from itertools import combinations
 import numpy as np
 import scipy
-
 from collections import defaultdict
-def shen_modularity(G, community_list):
-    """
-    G: NetworkX graph (undirected, unweighted)
-    community_list: list of sets, each set is a community (can overlap)
 
-    Returns: Shen modularity (float)
-    """
+def shen_modularity(G, communities):
     m = G.number_of_edges()
     if m == 0:
-        return 0
+        return 0.0
 
-    # Compute degrees
-    degrees = dict(G.degree())
-
-    # Compute O: number of communities each node belongs to
-    O = {}
-    for cid, community in enumerate(community_list):
+    # Count number of communities per node (O_i)
+    node_community_count = defaultdict(int)
+    for c_id, community in enumerate(communities):
         for node in community:
-            O[node] = O.get(node, 0) + 1
+            node_community_count[node] += 1
 
+    all_nodes = set(G.nodes())
     Q = 0.0
-    nodes = list(G.nodes())
-    for i in nodes:
-        for j in nodes:
+
+    for i in all_nodes:
+        k_i = G.degree[i]
+        O_i = node_community_count[i] or 1
+        for j in all_nodes:
+            k_j = G.degree[j]
+            O_j = node_community_count[j] or 1
             A_ij = 1 if G.has_edge(i, j) else 0
-            k_i = degrees[i]
-            k_j = degrees[j]
-            O_i = O.get(i, 1)
-            O_j = O.get(j, 1)
-
-            # Check how many communities i and j share
-            shared = 0
-            for community in community_list:
-                if i in community and j in community:
-                    shared += 1
-
-            if shared > 0:
-                delta_Q = shared * (A_ij - (k_i * k_j) / (2 * m)) / (O_i * O_j)
-                Q += delta_Q
-
+            if i == j:
+                A_ij = 1
+            term = (A_ij - (k_i * k_j) / (2 * m)) / (O_i * O_j)
+            Q += term
     Q /= (2 * m)
     return Q
 
+
 import networkx as nx
+from collections import defaultdict
+
+def shen_modularity_community_form(G, communities):
+    m = G.number_of_edges()
+    if m == 0:
+        return 0.0
+
+    # Krok 1: Spočítej O_i (počet komunit pro každý uzel)
+    node_community_count = defaultdict(int)
+    for community in communities:
+        for node in community:
+            node_community_count[node] += 1
+
+
+    Q = 0.0
+
+    # Krok 2: Iterace přes každou komunitu
+    for idx, community in enumerate(communities):
+        community = list(community)
+        for i in range(len(community)):
+            v = community[i]
+            k_v = G.degree[v]
+            O_v = node_community_count[v] or 1
+            for j in range(i, len(community)):
+                w = community[j]
+                k_w = G.degree[w]
+                O_w = node_community_count[w] or 1
+                A_vw = 1 if G.has_edge(v, w) else 0
+
+                contrib = (A_vw - (k_v * k_w) / (2 * m)) / (O_v * O_w)
+                if v == w:
+                    Q += contrib  
+                else:
+                    Q += 2 * contrib 
+
+    Q_final = Q / (2 * m)
+    return Q_final
+
 
 def lazar_modularity(G, community_list):
     """

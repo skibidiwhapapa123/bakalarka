@@ -33,7 +33,7 @@ from cdlib.evaluation import (
     link_modularity
 )
 
-from evaluations import ( shen_modularity, lazar_modularity, NF1, mgh_onmi )
+from evaluations import ( shen_modularity, lazar_modularity, NF1, mgh_onmi, shen_modularity_community_form)
 
 app = Flask(__name__)
 
@@ -41,6 +41,35 @@ GRAPH_PATH = "network.dat"
 COMMUNITY_PATH = "community.dat"
 COUNTER_FILE = "static/plot_counter.txt"
 LFR_OUTPUT_DIR = 'lfr_output/'
+
+node_embeddings_cache = None
+
+
+@app.route("/generateEmbedding", methods=["POST"])
+def generate_embedding():
+    global node_embeddings_cache
+    
+
+    print("Generating embedding")
+    # Read the graph data
+    G = nx.read_edgelist(GRAPH_PATH, nodetype=int)
+    dimensions = int(request.json.get("dimensions", 8))
+    walk_length = int(request.json.get("walk_length", 50))
+    num_walks = int(request.json.get("num_walks", 10))
+    p = float(request.json.get("p", 1))
+    q = float(request.json.get("q", 1))
+
+    # Generate node embeddings using Node2Vec
+    node2vec = Node2Vec(G, dimensions=dimensions, walk_length=walk_length, num_walks=num_walks, workers=1, p=p, q=q)
+    model = node2vec.fit(window=10, min_count=1, batch_words=4)
+    
+    # Overwrite the previous embeddings with new ones
+    node_embeddings_cache = np.array([model.wv[str(node)] for node in G.nodes()])
+
+    return jsonify({
+        "success": True,
+        "message": "Embeddings generated and cached successfully."
+    })
 
 
 @app.route('/get_available_graphs')
@@ -58,11 +87,11 @@ def get_unique_folder_name(base_folder):
     return folder_name
 
 def get_available_graphs():
-    """Vrátí seznam složek v lfr_output/ (grafy s unikátními názvy)."""
     return [d for d in os.listdir(LFR_OUTPUT_DIR) if os.path.isdir(os.path.join(LFR_OUTPUT_DIR, d))]
 
 @app.route('/load_graph/<folder_name>', methods=['POST'])
 def load_graph_endpoint(folder_name):
+
     # Construct paths for the network.dat and community.dat files in the selected folder
     folder_path = os.path.join(LFR_OUTPUT_DIR, folder_name)
     network_file_path = os.path.join(folder_path, 'network.dat')
@@ -123,13 +152,15 @@ def compute_metrics(graph, detected_communities, ground_truth_communities):
     #print(ground_truth_communities)
 
     shen = shen_modularity(graph, detected_communities)
+    shen2 = shen_modularity_community_form(graph, detected_communities)
     lazar_score = lazar_modularity(graph, detected_communities)
     my_f1_score = NF1(detected_communities, ground_truth_communities).get_f1()
     my_onmi = mgh_onmi(detected_communities, ground_truth_communities)
 
     #my_f1_score = f1score(detected_communities, ground_truth_communities)
     
-    
+    print(f"Shen1 = {shen}")
+    print(f"Shen2 = {shen2}")
    
     l_detected_nc, l_ground_truth_nc = align_partitions(detected_communities, ground_truth_communities)
 
@@ -161,7 +192,8 @@ def compute_metrics(graph, detected_communities, ground_truth_communities):
         "omega": round(omega_score,4),
         "f1": round(f1_score, 4),
         "lazar": round(lazar_score, 4),
-        "shen": round(shen, 4)
+        "shen": round(shen, 4),
+        "shen2": round (shen2, 4)
     }
 
 
@@ -326,7 +358,7 @@ def run_oslom(graph_path: str, directed=False, extra_args=None, copra_runs=0,
         for line in f:
             if line.startswith("#"):
                 continue  # Skip comment lines
-            nodes = list(map(int, line.strip().split()))
+            nodes = set(map(int, line.strip().split()))
             communities.append(nodes)
 
     return communities
@@ -367,20 +399,16 @@ def detect():
             if algorithm == "slpa":
                 detected_communities = find_communities(G, T, r)
             else:
-                detected_communities = slpa(G, T, r).communities
+                detected_communities = set(frozenset(c) for c in slpa(G, T, r).communities)
             params = {"T": T, "r": r}
 
         elif algorithm == "n2vfcm":
-            dimensions = int(request.json.get("dimensions", 8))
-            walk_length = int(request.json.get("walk_length", 50))
-            num_walks = int(request.json.get("num_walks", 10))
             clusters = int(request.json.get("clusters", 4))
-            p = float(request.json.get("p", 1))
-            q = float(request.json.get("q", 1))
             m = float(request.json.get("m", 1.5))
             threshold = float(request.json.get("threshold", 0.3))
-            detected_communities = node2vec_fuzzy_cmeans(G, dimensions, walk_length, num_walks, clusters, p, q, m, threshold)
-            params = {"dim": dimensions, "wl": walk_length, "nw": num_walks, "p": p, "q": q, "c": clusters, "t": threshold}
+            detected_communities = fuzzy_cmeans(G, clusters, m, threshold)
+            params = {"m": m, "c": clusters, "t": threshold}
+            #params = {"dim": dimensions, "wl": walk_length, "nw": num_walks, "p": p, "m": m, "c": clusters, "t": threshold}
 
         elif algorithm == "demon":
             epsilon = float(request.json.get("epsilon", 0.1))
@@ -390,7 +418,7 @@ def detect():
 
         elif algorithm == "conga":
             number_communities = int(request.json.get("number_community", 4))
-            detected_communities = conga(G, number_communities).communities
+            detected_communities = set(frozenset(c) for c in conga(G, number_communities).communities)
             params = {"number_communities": number_communities}
 
         elif algorithm == "oslom":
@@ -584,12 +612,13 @@ def optimize():
 
 
 
-def node2vec_fuzzy_cmeans(G, dimensions, walk_length, num_walks, clusters,p, q, m, threshold):
+def fuzzy_cmeans(G, clusters, m, threshold):
 
-    node2vec = Node2Vec(G, dimensions=dimensions, walk_length=walk_length, num_walks=num_walks, workers=1, p=p, q=q)
-    model = node2vec.fit(window=10, min_count=1, batch_words=4)
-    
-    node_embeddings = np.array([model.wv[str(node)] for node in G.nodes()])
+    #node2vec = Node2Vec(G, dimensions=dimensions, walk_length=walk_length, num_walks=num_walks, workers=1, p=p, q=q)
+    #model = node2vec.fit(window=10, min_count=1, batch_words=4)
+    global node_embeddings_cache
+
+    node_embeddings = node_embeddings_cache #np.array([model.wv[str(node)] for node in G.nodes()])
     
     cntr, u, _, _, _, _, _ = fuzz.cluster.cmeans(
         data=node_embeddings.T, 
@@ -613,7 +642,7 @@ def node2vec_fuzzy_cmeans(G, dimensions, walk_length, num_walks, clusters,p, q, 
         for comm in comms:
             communities[comm].add(node)
 
-    return [frozenset(nodes) for nodes in communities.values()]
+    return [set(nodes) for nodes in communities.values()]
 
 def plot_communities(G, ground_truth, detected, index=None):
     pos = nx.spring_layout(G, seed=10)
@@ -689,7 +718,10 @@ def draw_colored_communities(G, communities, pos, ax=None):
 
     nx.draw_networkx_edges(G, pos, alpha=0.5, width=0.5, ax=ax)
 
-    node_radius = 0.02
+    node_radius = 0.05
+    if len(G) > 50:
+        node_radius = 0.02
+
     for node, (x, y) in pos.items():
         comms = node_communities[node]
         num_comms = len(comms)
@@ -708,8 +740,6 @@ def draw_colored_communities(G, communities, pos, ax=None):
                               facecolor=color, ec="black", lw=0.2, zorder=3)
                 ax.add_patch(wedge)
 
-    #ax.set_xlim(-1.1, 1.1)
-    #ax.set_ylim(-1.1, 1.1)
     ax.set_aspect("equal")
 
 if __name__ == "__main__":
