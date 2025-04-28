@@ -175,7 +175,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js"
         integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
         crossorigin="anonymous"></script>
-    <h1>Community Detection with LFR Benchmark</h1>
 
     <div class="message">
         <p id="message"></p>
@@ -190,201 +189,199 @@
 
     <div id="best-params"></div>
 
-    <div class="mb-4" id="mode-switcher">
-        <label for="mode" class="form-label">Select Mode:</label>
-        <select class="form-select w-auto d-inline-block" id="mode" onchange="switchMode()">
-            <option value="generate">Generate LFR</option>
-            <option value="optimize">Optimize</option>
-            <option value="detect_container">Detect</option>
-            <option value="example_graphs">Load Graph</option>
-        </select>
-    </div>
+    <ul class="nav nav-tabs" id="modeTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button" role="tab">Generate / Load Graph</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="optimize-tab" data-bs-toggle="tab" data-bs-target="#optimize" type="button" role="tab">Optimize</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="detect-tab" data-bs-toggle="tab" data-bs-target="#detect_container" type="button" role="tab">Detect</button>
+        </li>
+    </ul>
 
-    <div class="container" id="generate">
-        <!-- Graph Generation Form -->
-        <form id="generate-form">
-            <h2>Generate Graph</h2>
-            <label for="N">Number of Nodes (N):</label>
-            <input type="number" name="N" value="100"><br>
+    <div class="tab-content mt-3">
+        
+        <!-- Generate / Load -->
+        <div class="tab-pane fade show active" id="generate" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <!-- Graph Generation Form -->
+                    <form id="generate-form">
+                        <h2>Generate Graph</h2>
+                        <label for="N">Number of Nodes (N):</label>
+                        <input type="number" name="N" value="100" class="form-control mb-2">
 
-            <label for="k">Average Degree (k):</label>
-            <input type="number" name="k" value="7"><br>
+                        <label for="k">Average Degree (k):</label>
+                        <input type="number" name="k" value="7" class="form-control mb-2">
 
-            <label for="maxk">Max Degree (maxk):</label>
-            <input type="number" name="maxk" value="15"><br>
+                        <label for="maxk">Max Degree (maxk):</label>
+                        <input type="number" name="maxk" value="15" class="form-control mb-2">
 
-            <label for="mu">Mixing Parameter (mu):</label>
-            <input type="number" name="mu" value="0.08"><br>
+                        <label for="mu">Mixing Parameter (mu):</label>
+                        <input type="number" name="mu" value="0.08" class="form-control mb-2">
 
-            <label>t1 (Degree Exponent):</label>
-            <input type="number" name="t1" value=""><br>
+                        <label>t1 (Degree Exponent):</label>
+                        <input type="number" name="t1" value="" class="form-control mb-2">
 
-            <label>t2 (Community Exponent):</label>
-            <input type="number" name="t2" value=""><br>
+                        <label>t2 (Community Exponent):</label>
+                        <input type="number" name="t2" value="" class="form-control mb-2">
 
-            <label>minc (Min Community Size):</label>
-            <input type="number" name="minc" value=""><br>
+                        <label>minc (Min Community Size):</label>
+                        <input type="number" name="minc" value="" class="form-control mb-2">
 
-            <label>maxc (Max Community Size):</label>
-            <input type="number" name="maxc" value=""><br>
+                        <label>maxc (Max Community Size):</label>
+                        <input type="number" name="maxc" value="" class="form-control mb-2">
 
-            <label>on (Overlapping Nodes):</label>
-            <input type="number" name="on" value="20"><br>
+                        <label>on (Overlapping Nodes):</label>
+                        <input type="number" name="on" value="20" class="form-control mb-2">
 
-            <label>om (Memberships per Overlapping Node):</label>
-            <input type="number" name="om" value="2"><br>
+                        <label>om (Memberships per Overlapping Node):</label>
+                        <input type="number" name="om" value="2" class="form-control mb-2">
 
-            <button type="button" onclick="generateGraph()">Generate Graph</button>
-        </form>
-    </div>
+                        <button type="button" class="btn btn-primary mt-2" onclick="generateGraph()">Generate Graph</button>
+                    </form>
+                </div>
 
-    <div class="optimal_params" id="optimize">
-        <label for="algorithm-select">Select Algorithm:</label>
-        <select id="algorithm-select">
-            <option value="slpa">SLPA</option>
-            <option value="linkcom">AHN</option>
-            <option value="linkcom_original">Original AHN</option>
-        </select>
-        <br />
-        <label for="metric-select">Select Metric:</label>
-        <select id="metric-select">
-            <option value="lazar">Q_lazar</option>
-            <option value="onmi">ONMI</option>
-            <option value="f1">F1 Score</option>
-            <option value="omega">Omega</option>
-        </select>
-        <br>
-        <button id="optimize-slpa-btn" disabled>Optimize</button>
-    </div>
-
-
-
-
-    <div class="container-fluid mt-4" id="detect_container">
-        <div class="row">
-            <div class="col-md-4">
-                <form id="detect-form">
-                    <h3>Select Community Detection Algorithm</h3>
-                    <label for="algorithm">Algorithm:</label>
-                    <select id="algorithm" name="algorithm" onchange="toggleParams()">
-                        <option value="slpa">SLPA</option>
-                        <option value="slpa_cdlib">SLPA CDLIB</option>
-                        <option value="linkcom">AHN</option>
-                        <option value="linkcom_original">AHN original</option>
-                        <option value="n2vfcm">Node2Vec + FCM</option>
-                        <option value="demon">DEMON</option>
-                        <option value="conga">CONGA</option>
-                        <option value="oslom">OSLOM original</option>
+                <div class="col-md-6">
+                    <!-- Load Example Graph -->
+                    <h2>Load Example Graph</h2>
+                    <label for="graphHistorySelect">Choose a graph:</label>
+                    <select id="graphHistorySelect" class="form-select mb-2">
+                        <option value="" disabled selected>Select a graph</option>
                     </select>
 
-                    <div id="slpa_params">
-                        <label for="T">Iterations (T):</label>
-                        <input type="number" name="T" value="20"><br>
-                        <label for="r">Retention Probability (r):</label>
-                        <input type="text" name="r" value="0.3"><br>
-                    </div>
-                    <div id="ahn_params" style="display:none;">
-                        <label for="ahn_threshold">threshold</label>
-                        <input type="number" name="ahn_threshold" id="ahn_threshold" value="0.2" disabled><input
-                            type="checkbox" id="ahn_use_threshold"><br>
-                        <label for="method">Linkage</label>
-                        <select name="method">
-                            <option value="single">single</option>
-                            <option value="complete">complete</option>
-                            <option value="average">average</option>
-                        </select>
-                        <br>
-                        <label for="ahn_min_com">Min community size: </label>
-                        <input type="number" name="ahn_min_com" value="3">
-                    </div>
-
-                    <div id="ahn_original_params">
-                        <label for="ahn_original_threshold">Threshold:</label>
-                        <input type="number" name="ahn_original_threshold" id="ahn_original_threshold" value="0.2"
-                            disabled><input type="checkbox" id="ahn_original_use_threshold"> <br>
-                    </div>
-
-                    <div id="oslom_params" style="display:none;">
-                        <label for="oslom_f_l_i">First Level Iterations (r)</label>
-                        <input type="number" name="oslom_f_l_i" value="10">
-                        <br>
-                        <label for="oslom_h_l_i">Higher Level Iterations (hr)</label>
-                        <input type="number" name="oslom_h_l_i" value="50">
-                        <br>
-                        <label for="oslom_p_v_t">p-value threshold (t)</label>
-                        <input type="number" name="oslom_p_v_t" value="0.1">
-                        <br>
-                        <label for="oslom_infomap">Infomap N (i)</label>
-                        <input type="number" name="oslom_infomap" value="0">
-                        <br>
-                        <label for="oslom_louvain">Louvain N (l)</label>
-                        <input type="number" name="oslom_louvain" value="0">
-                        <br>
-                        <label for="oslom_copra">Copra N (c)</label>
-                        <input type="number" name="oslom_copra" value="0">
-                        <br>
-                        <label for="oslom_singler">Homeless (s)</label>
-                        <input type="number" name="oslom_singler" value="0">
-                        <br>
-                    </div>
-                    <div id="fcm_params" style="display:none;">
-                        <label for="num_walks">FCM m:</label>
-                        <input type="number" name="m" value="1.5"><br>
-
-                        <label for="threshold">FCM threshold:</label>
-                        <input type="number" name="threshold" value="0.3"><br>
-
-                        <label for="clusters">FCM Clusters:</label>
-                        <input type="number" name="clusters" value="10"><br>
-                        <small class="num-communities-info" style="color: gray; font-style: italic;"></small>
-                    </div>
-
-                    <div id="demon_params" style="display:none;">
-                        <label for="epsilon">Epsilon (Tolerance):</label>
-                        <input type="number" name="epsilon" value="0.25"><br>
-
-                        <label for="min_community_size">Min Community Size:</label>
-                        <input type="number" name="min_community_size" value="3"><br>
-                    </div>
-
-                    <div id="conga_params" style="display:none;">
-                        <label for="number_community">Number of communities:</label>
-                        <input type="number" name="number_community" value="5"><br>
-                        <small class="num-communities-info" style="color: gray; font-style: italic;"></small>
-                    </div>
-
-                    <label for="n_iterations">Number of Runs:</label>
-                    <input type="number" id="N" placeholder="Number of runs" min="1" value="1">
-                    <br />
-                    <button type="button" id="detect-btn" onclick="detectCommunities()" disabled>Detect
-                        Communities</button>
-                </form>
-                <form>
-                    <div id="node2vec_params">
-                        <label for="dimensions">Node2Vec Dimensions:</label>
-                        <input type="number" name="dimensions" value="4"><br>
-
-                        <label for="walk_length">Node2Vec Walk Length:</label>
-                        <input type="number" name="walk_length" value="30"><br>
-
-                        <label for="num_walks">Node2Vec Walks:</label>
-                        <input type="number" name="num_walks" value="30"><br>
-
-                        <label for="p">Node2Vec p:</label>
-                        <input type="number" name="p" value="1"><br>
-
-                        <label for="q">Node2Vec q:</label>
-                        <input type="number" name="q" value="1"><br>
-                        <button type="button" id="detect-btn" onclick="generateEmbedding()">Generate Embedding</button>
-                    </div>
-                </form>
-            </div>
-            <div class="col-md-8 d-flex justify-content-center align-items-center">
-
-                <img id="community_plot" src="" alt="Community Detection Plot"
-                    style="max-width: 100%; height: auto; display: none;" />
+                    <br>
+                    <button id="loadGraphButton" class="btn btn-primary" onclick="loadSelectedGraph()">Load Graph</button>
+                </div>
             </div>
         </div>
+
+        <!-- Optimize -->
+        <div class="tab-pane fade" id="optimize" role="tabpanel">
+            <h2>Optimize Parameters</h2>
+            <label for="algorithm-select">Select Algorithm:</label>
+            <select id="algorithm-select" class="form-select mb-2">
+                <option value="slpa">SLPA</option>
+                <option value="linkcom">AHN</option>
+                <option value="linkcom_original">Original AHN</option>
+            </select>
+
+            <label for="metric-select">Select Metric:</label>
+            <select id="metric-select" class="form-select mb-2">
+                <option value="lazar">Q_lazar</option>
+                <option value="onmi">ONMI</option>
+                <option value="f1">F1 Score</option>
+                <option value="omega">Omega</option>
+            </select>
+
+            <button id="optimize-slpa-btn" class="btn btn-primary mt-2" disabled>Optimize</button>
+        </div>
+
+        <!-- Detect -->
+        <div class="tab-pane fade" id="detect_container" role="tabpanel">
+            <div class="row">
+                <div class="col-md-4">
+                    <form class="mt-4">
+                        <div id="node2vec_params">
+                            <label for="dimensions">Dimensions:</label>
+                            <input type="number" name="dimensions" value="4" class="form-control mb-2">
+                            <label for="walk_length">Walk Length:</label>
+                            <input type="number" name="walk_length" value="30" class="form-control mb-2">
+                            <label for="num_walks">Walks:</label>
+                            <input type="number" name="num_walks" value="30" class="form-control mb-2">
+                            <label for="p">p:</label>
+                            <input type="number" name="p" value="1" class="form-control mb-2">
+                            <label for="q">q:</label>
+                            <input type="number" name="q" value="1" class="form-control mb-2">
+                            <button type="button" class="btn btn-secondary mt-2" onclick="generateEmbedding()">Generate Embedding</button>
+                        </div>
+                    </form>
+                    <form id="detect-form">
+                        <label for="algorithm">Algorithm:</label>
+                        <select id="algorithm" name="algorithm" onchange="toggleParams()" class="form-select mb-2">
+                            <option value="slpa">SLPA</option>
+                            <option value="slpa_cdlib">SLPA CDLIB</option>
+                            <option value="linkcom">AHN</option>
+                            <option value="linkcom_original">AHN original</option>
+                            <option value="n2vfcm">Node2Vec + FCM</option>
+                            <option value="conga">CONGA</option>
+                            <option value="oslom">OSLOM original</option>
+                        </select>
+
+                        <div id="slpa_params">
+                            <label for="T">Iterations (T):</label>
+                            <input type="number" name="T" value="20" class="form-control mb-2">
+                            <label for="r">Threshold (r):</label>
+                            <input type="text" name="r" value="0.3" class="form-control mb-2">
+                        </div>
+
+                        <div id="ahn_params" style="display:none;">
+                            <label for="ahn_threshold">Threshold:</label>
+                            <input type="number" name="ahn_threshold" id="ahn_threshold" value="0.2" class="form-control mb-2" disabled>
+                            <input type="checkbox" id="ahn_use_threshold"> Use Threshold<br>
+                            <label for="method">Linkage:</label>
+                            <select name="method" class="form-select mb-2">
+                                <option value="single">single</option>
+                                <option value="complete">complete</option>
+                            </select>
+                            <label for="ahn_min_com">Min community size:</label>
+                            <input type="number" name="ahn_min_com" value="3" class="form-control mb-2">
+                        </div>
+
+                        <div id="ahn_original_params">
+                            <label for="ahn_original_threshold">Threshold:</label>
+                            <input type="number" name="ahn_original_threshold" id="ahn_original_threshold" value="0.2" class="form-control mb-2" disabled>
+                            <input type="checkbox" id="ahn_original_use_threshold"> Use Threshold<br>
+                        </div>
+
+                        <div id="oslom_params" style="display:none;">
+                            <label for="oslom_f_l_i">First Level Iterations (r):</label>
+                            <input type="number" name="oslom_f_l_i" value="10" class="form-control mb-2">
+                            <label for="oslom_h_l_i">Higher Level Iterations (hr):</label>
+                            <input type="number" name="oslom_h_l_i" value="50" class="form-control mb-2">
+                            <label for="oslom_p_v_t">p-value Threshold (t):</label>
+                            <input type="number" name="oslom_p_v_t" value="0.1" class="form-control mb-2">
+                            <label for="oslom_infomap">Infomap N (i):</label>
+                            <input type="number" name="oslom_infomap" value="0" class="form-control mb-2">
+                            <label for="oslom_louvain">Louvain N (l):</label>
+                            <input type="number" name="oslom_louvain" value="0" class="form-control mb-2">
+                            <label for="oslom_copra">Copra N (c):</label>
+                            <input type="number" name="oslom_copra" value="0" class="form-control mb-2">
+                            <label for="oslom_singler">Homeless (s):</label>
+                            <input type="number" name="oslom_singler" value="0" class="form-control mb-2">
+                        </div>
+                        
+                        <div id="fcm_params" style="display:none;">
+                            <label for="m">FCM m:</label>
+                            <input type="number" name="m" value="1.5" class="form-control mb-2">
+                            <label for="threshold">FCM Threshold:</label>
+                            <input type="number" name="threshold" value="0.3" class="form-control mb-2">
+                            <label for="clusters">FCM Clusters:</label>
+                            <input type="number" name="clusters" value="10" class="form-control mb-2">
+                        </div>
+
+                        <div id="conga_params" style="display:none;">
+                            <label for="number_community">Number of Communities:</label>
+                            <input type="number" name="number_community" value="5" class="form-control mb-2">
+                        </div>
+
+                        <label for="N">Number of Runs:</label>
+                        <input type="number" id="N" placeholder="Number of runs" min="1" value="1" class="form-control mb-2">
+
+                        <button type="button" id="detect-btn" class="btn btn-primary" onclick="detectCommunities()" disabled>Detect Communities</button>
+                    </form>
+
+                    
+                </div>
+
+                <div class="col-md-8 d-flex justify-content-center align-items-center">
+                    <img id="community_plot" src="" alt="Community Detection Plot" style="max-width: 100%; height: auto; display: none;" />
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <div class="example_graphs mb-4" id="example_graphs">
@@ -412,7 +409,11 @@
         <!-- Right: Plot (2/3 width) -->
 
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.min.js"></script>
     <script>
+
+        
         function switchMode() {
             const mode = document.getElementById("mode").value;
 
@@ -435,7 +436,7 @@
         }
 
 
-        switchMode();
+        //switchMode();
 
 
         async function loadGraphHistory() {
@@ -533,7 +534,7 @@
             document.getElementById("slpa_params").style.display = (algo == "slpa" || algo == "slpa_cdlib") ? "block" : "none";
             document.getElementById("node2vec_params").style.display = (algo == "n2vfcm") ? "block" : "none";
             document.getElementById("fcm_params").style.display = (algo == "n2vfcm") ? "block" : "none";
-            document.getElementById("demon_params").style.display = (algo == "demon") ? "block" : "none";
+            //document.getElementById("demon_params").style.display = (algo == "demon") ? "block" : "none";
             document.getElementById("conga_params").style.display = (algo == "conga") ? "block" : "none";
             document.getElementById("ahn_params").style.display = (algo == "linkcom") ? "block" : "none";
             document.getElementById("ahn_original_params").style.display = (algo == "linkcom_original") ? "block" : "none";
@@ -843,7 +844,6 @@
                 <td>${res.onmi}</td>
                 <td>${res.f1}</td>
                 <td>${res.lazar}</td>
-                <td>${res.shen}</td>
                 <td>${res.shen2}</td>
                 <td><button onclick="showPlot('${res.image_url}')">Show</button></td>
             `;
@@ -875,9 +875,9 @@
                 return;
             }
 
-            let latexCode = "\\begin{table}[h]\n\\centering\n\\begin{tabular}{|l|c|c|c|c|}\n\\toprule\n";
+            let latexCode = "\\begin{table}[h]\n\\centering\n\\begin{tabular}{|l|c|c|c|c|c|}\n\\toprule\n";
 
-            let headers = ["Algorithm", "ONMI", "F1-score", "Omega", "Q_lazar"];
+            let headers = ["Algorithm", "ONMI", "F1", "Omega", "Q_l", "Q_s"];
             latexCode += headers.join(" & ") + " \\\\\n\\midrule\n";
 
             let rows = table.querySelectorAll("tbody tr");

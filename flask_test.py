@@ -192,7 +192,6 @@ def compute_metrics(graph, detected_communities, ground_truth_communities):
         "omega": round(omega_score,4),
         "f1": round(f1_score, 4),
         "lazar": round(lazar_score, 4),
-        "shen": round(shen, 4),
         "shen2": round (shen2, 4)
     }
 
@@ -678,7 +677,7 @@ def draw_colored_communities(G, communities, pos, ax=None):
         for node in comm:
             node_communities[node].add(i)
 
-    num_communities = 20  # Adjust based on your needs
+
 
     color_palette = ["#bfb100",
 "#3d66ef",
@@ -739,7 +738,8 @@ def draw_colored_communities(G, communities, pos, ax=None):
                 wedge = Wedge((x, y), node_radius, angles[i], angles[(i + 1) % num_comms],
                               facecolor=color, ec="black", lw=0.2, zorder=3)
                 ax.add_patch(wedge)
-
+        ax.text(x, y + node_radius * 1.1, str(node), fontsize=6, ha='center', va='center', zorder=4)
+    
     ax.set_aspect("equal")
 
 if __name__ == "__main__":
