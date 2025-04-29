@@ -14,14 +14,12 @@ from matplotlib.patches import Wedge
 import numpy as np
 from node2vec import Node2Vec
 import skfuzzy as fuzz
-from demonalgo import DemonAlgorithm
 from cdlib import NodeClustering
 from ahn_link import link_communities
 from slpaalgorithm import find_communities
 from slpav2 import SLPA
 from cdlib.algorithms import (
     slpa,
-    demon,
     kclique,
     conga
 )
@@ -33,7 +31,7 @@ from cdlib.evaluation import (
     link_modularity
 )
 
-from evaluations import ( shen_modularity, lazar_modularity, NF1, mgh_onmi, shen_modularity_community_form)
+from evaluations import ( shen_modularity, lazar_modularity, NF1, mgh_onmi)
 
 app = Flask(__name__)
 
@@ -150,18 +148,15 @@ def compute_metrics(graph, detected_communities, ground_truth_communities):
     """
     
     #print(ground_truth_communities)
+    print(len(ground_truth_communities))
 
     shen = shen_modularity(graph, detected_communities)
-    shen2 = shen_modularity_community_form(graph, detected_communities)
     lazar_score = lazar_modularity(graph, detected_communities)
     my_f1_score = NF1(detected_communities, ground_truth_communities).get_f1()
     my_onmi = mgh_onmi(detected_communities, ground_truth_communities)
 
     #my_f1_score = f1score(detected_communities, ground_truth_communities)
     
-    print(f"Shen1 = {shen}")
-    print(f"Shen2 = {shen2}")
-   
     l_detected_nc, l_ground_truth_nc = align_partitions(detected_communities, ground_truth_communities)
 
 
@@ -192,7 +187,7 @@ def compute_metrics(graph, detected_communities, ground_truth_communities):
         "omega": round(omega_score,4),
         "f1": round(f1_score, 4),
         "lazar": round(lazar_score, 4),
-        "shen2": round (shen2, 4)
+        "shen2": round (shen, 4)
     }
 
 
@@ -386,7 +381,7 @@ def detect():
     ground_truth_communities = load_ground_truth()
 
     algorithm = request.json.get("algorithm")
-    N = int(request.json.get("N", 1))
+    N = int(request.json.get("N_iter", 1))
     params = {}
 
     all_results = []
@@ -408,12 +403,6 @@ def detect():
             detected_communities = fuzzy_cmeans(G, clusters, m, threshold)
             params = {"m": m, "c": clusters, "t": threshold}
             #params = {"dim": dimensions, "wl": walk_length, "nw": num_walks, "p": p, "m": m, "c": clusters, "t": threshold}
-
-        elif algorithm == "demon":
-            epsilon = float(request.json.get("epsilon", 0.1))
-            min_community_size = int(request.json.get("min_community_size", 3))
-            detected_communities = DemonAlgorithm(epsilon=epsilon, min_community_size=min_community_size).execute(G)
-            params = {"epsilon": epsilon, "mincomsize": min_community_size}
 
         elif algorithm == "conga":
             number_communities = int(request.json.get("number_community", 4))
@@ -738,7 +727,7 @@ def draw_colored_communities(G, communities, pos, ax=None):
                 wedge = Wedge((x, y), node_radius, angles[i], angles[(i + 1) % num_comms],
                               facecolor=color, ec="black", lw=0.2, zorder=3)
                 ax.add_patch(wedge)
-        ax.text(x, y + node_radius * 1.1, str(node), fontsize=6, ha='center', va='center', zorder=4)
+        #ax.text(x, y + node_radius * 1.1, str(node), fontsize=6, ha='center', va='center', zorder=4)
     
     ax.set_aspect("equal")
 

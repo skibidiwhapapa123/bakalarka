@@ -17,16 +17,12 @@
         integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
         crossorigin="anonymous"></script>
     <style>
+
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
             text-align: center;
         }
-
-        h2 {
-            margin-bottom: 10px;
-        }
-
         form {
             display: inline-block;
             text-align: left;
@@ -60,24 +56,7 @@
             background: #0056b3;
         }
 
-        .container {
-            display: flex;
-            justify-content: center;
-            gap: 50px;
-            margin-top: 10px;
-        }
-
-        .plot-container {
-            display: flex;
-            flex-direction: column;
-            /* Stack elements vertically */
-            align-items: center;
-            /* Center horizontally */
-            justify-content: center;
-            /* Center vertically */
-            text-align: center;
-            /* Ensures text stays centered */
-        }
+      
 
         img {
             max-width: auto;
@@ -93,75 +72,6 @@
             margin-bottom: 15px;
         }
 
-        #more-info {
-            display: none;
-            background: #f4f4f4;
-            padding: 10px;
-            border: 1px solid #ccc;
-            margin-top: 10px;
-            white-space: pre-wrap;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        #optimize-slpa-btn {
-
-            max-height: 40px;
-        }
-
-        .community-results-container {
-            display: flex;
-            flex-direction: row;
-            gap: 20px;
-            /* spacing between columns */
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        .results-column {
-            flex: 1;
-            /* 1 part of the total 3 */
-            min-width: 250px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            /* horizontally center */
-            text-align: center;
-            /* ensures the text inside is also centered */
-        }
-
-
-        .plot-container {
-            width: 100%;
-        }
-
-        #detect_container {
-            display: flex;
-            flex-direction: row;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .form-container {
-            width: 33.33%;
-            padding: 1rem;
-            box-sizing: border-box;
-            overflow-y: auto;
-        }
-
-        .plot-column {
-            width: 66.66%;
-            padding: 1rem;
-            box-sizing: border-box;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .plot-container img {
-            max-width: 100%;
-            height: auto;
-        }
     </style>
 </head>
 
@@ -191,56 +101,80 @@
 
     <ul class="nav nav-tabs" id="modeTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate" type="button" role="tab">Generate / Load Graph</button>
+            <button class="nav-link active" id="generate-tab" data-bs-toggle="tab" data-bs-target="#generate"
+                type="button" role="tab">Generate / Load Graph</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="optimize-tab" data-bs-toggle="tab" data-bs-target="#optimize" type="button" role="tab">Optimize</button>
+            <button class="nav-link" id="detect-tab" data-bs-toggle="tab" data-bs-target="#detect_container"
+                type="button" role="tab">Detect</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="detect-tab" data-bs-toggle="tab" data-bs-target="#detect_container" type="button" role="tab">Detect</button>
+            <button class="nav-link" id="optimize-tab" data-bs-toggle="tab" data-bs-target="#optimize" type="button"
+                role="tab">Optimize</button>
         </li>
     </ul>
 
     <div class="tab-content mt-3">
-        
+
         <!-- Generate / Load -->
         <div class="tab-pane fade show active" id="generate" role="tabpanel">
             <div class="row">
                 <div class="col-md-6">
                     <!-- Graph Generation Form -->
                     <form id="generate-form">
-                        <h2>Generate Graph</h2>
-                        <label for="N">Number of Nodes (N):</label>
-                        <input type="number" name="N" value="100" class="form-control mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <label for="N" class="me-2" style="width: 370px;">Number of Nodes (N):</label>
+                            <input type="number" id="N" name="N" value="100" class="form-control" style="width: 100px;">
+                        </div>
 
-                        <label for="k">Average Degree (k):</label>
-                        <input type="number" name="k" value="7" class="form-control mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <label for="k" class="me-2" style="width: 370px;">Average Degree (k):</label>
+                            <input type="number" id="k" name="k" value="7" class="form-control" style="width: 100px;">
+                        </div>
 
-                        <label for="maxk">Max Degree (maxk):</label>
-                        <input type="number" name="maxk" value="15" class="form-control mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <label for="maxk" class="me-2" style="width: 370px;">Max Degree (maxk):</label>
+                            <input type="number" id="maxk" name="maxk" value="15" class="form-control" style="width: 100px;">
+                        </div>
 
-                        <label for="mu">Mixing Parameter (mu):</label>
-                        <input type="number" name="mu" value="0.08" class="form-control mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <label for="mu" class="me-2" style="width: 370px;">Mixing Parameter (mu):</label>
+                            <input type="number" id="mu" name="mu" value="0.08" class="form-control" style="width: 100px;">
+                        </div>
 
-                        <label>t1 (Degree Exponent):</label>
-                        <input type="number" name="t1" value="" class="form-control mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <label for="t1" class="me-2" style="width: 370px;">t1 (Degree Exponent):</label>
+                            <input type="number" id="t1" name="t1" class="form-control" style="width: 100px;">
+                        </div>
 
-                        <label>t2 (Community Exponent):</label>
-                        <input type="number" name="t2" value="" class="form-control mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <label for="t2" class="me-2" style="width: 370px;">t2 (Community Exponent):</label>
+                            <input type="number" id="t2" name="t2" class="form-control" style="width: 100px;">
+                        </div>
 
-                        <label>minc (Min Community Size):</label>
-                        <input type="number" name="minc" value="" class="form-control mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <label for="minc" class="me-2" style="width: 370px;">minc (Min Community Size):</label>
+                            <input type="number" id="minc" name="minc" class="form-control" style="width: 100px;">
+                        </div>
 
-                        <label>maxc (Max Community Size):</label>
-                        <input type="number" name="maxc" value="" class="form-control mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <label for="maxc" class="me-2" style="width: 370px;">maxc (Max Community Size):</label>
+                            <input type="number" id="maxc" name="maxc" class="form-control" style="width: 100px;">
+                        </div>
 
-                        <label>on (Overlapping Nodes):</label>
-                        <input type="number" name="on" value="20" class="form-control mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <label for="on" class="me-2" style="width: 370px;">on (Overlapping Nodes):</label>
+                            <input type="number" id="on" name="on" value="20" class="form-control" style="width: 100px;">
+                        </div>
 
-                        <label>om (Memberships per Overlapping Node):</label>
-                        <input type="number" name="om" value="2" class="form-control mb-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <label for="om" class="me-2" style="width: 370px;">om (Memberships per Overlapping
+                                Node):</label>
+                            <input type="number" id="om" name="om" value="2" class="form-control" style="width: 100px;">
+                        </div>
 
-                        <button type="button" class="btn btn-primary mt-2" onclick="generateGraph()">Generate Graph</button>
+                        <button type="button" class="btn btn-primary mt-3" onclick="generateGraph()">Generate
+                            Graph</button>
                     </form>
                 </div>
 
@@ -253,7 +187,8 @@
                     </select>
 
                     <br>
-                    <button id="loadGraphButton" class="btn btn-primary" onclick="loadSelectedGraph()">Load Graph</button>
+                    <button id="loadGraphButton" class="btn btn-primary" onclick="loadSelectedGraph()">Load
+                        Graph</button>
                 </div>
             </div>
         </div>
@@ -279,217 +214,219 @@
             <button id="optimize-slpa-btn" class="btn btn-primary mt-2" disabled>Optimize</button>
         </div>
 
-        <!-- Detect -->
         <div class="tab-pane fade" id="detect_container" role="tabpanel">
-            <div class="row">
-                <div class="col-md-4">
-                    <form class="mt-4">
-                        <div id="node2vec_params">
-                            <label for="dimensions">Dimensions:</label>
-                            <input type="number" name="dimensions" value="4" class="form-control mb-2">
-                            <label for="walk_length">Walk Length:</label>
-                            <input type="number" name="walk_length" value="30" class="form-control mb-2">
-                            <label for="num_walks">Walks:</label>
-                            <input type="number" name="num_walks" value="30" class="form-control mb-2">
-                            <label for="p">p:</label>
-                            <input type="number" name="p" value="1" class="form-control mb-2">
-                            <label for="q">q:</label>
-                            <input type="number" name="q" value="1" class="form-control mb-2">
-                            <button type="button" class="btn btn-secondary mt-2" onclick="generateEmbedding()">Generate Embedding</button>
+            <div class="grid-container">
+                <!-- First Row: Form + Image (in the same column, side-by-side) -->
+                <div class="grid-item">
+                    <div class="row">
+                        <!-- Form Column -->
+                        <div class="col-md-4">
+                            <form class="mt-4">
+                                <div id="node2vec_params">
+                                    <label for="dimensions">Dimensions:</label>
+                                    <input type="number" name="dimensions" value="4" class="form-control mb-2">
+                                    <label for="walk_length">Walk Length:</label>
+                                    <input type="number" name="walk_length" value="30" class="form-control mb-2">
+                                    <label for="num_walks">Walks:</label>
+                                    <input type="number" name="num_walks" value="30" class="form-control mb-2">
+                                    <label for="p">p:</label>
+                                    <input type="number" name="p" value="1" class="form-control mb-2">
+                                    <label for="q">q:</label>
+                                    <input type="number" name="q" value="1" class="form-control mb-2">
+                                    <button type="button" class="btn btn-secondary mt-2" onclick="generateEmbedding()">Generate
+                                        Embedding</button>
+                                </div>
+                            </form>
+        
+                            <!-- Detection Algorithm Form -->
+                            <form id="detect-form">
+                                <label for="algorithm">Algorithm:</label>
+                                <select id="algorithm" name="algorithm" onchange="toggleParams()" class="form-select mb-2">
+                                    <option value="slpa">SLPA</option>
+                                    <option value="slpa_cdlib">SLPA CDLIB</option>
+                                    <option value="linkcom">AHN</option>
+                                    <option value="linkcom_original">AHN original</option>
+                                    <option value="n2vfcm">Node2Vec + FCM</option>
+                                    <option value="conga">CONGA</option>
+                                    <option value="oslom">OSLOM original</option>
+                                </select>
+        
+                                <!-- Parameters for SLPA -->
+                                <div id="slpa_params">
+                                    <label for="T">Iterations (T):</label>
+                                    <input type="number" name="T" value="20" class="form-control mb-2">
+                                    <label for="r">Threshold (r):</label>
+                                    <input type="text" name="r" value="0.3" class="form-control mb-2">
+                                </div>
+        
+                                <!-- Parameters for AHN -->
+                                <div id="ahn_params" style="display:none;">
+                                    <label for="ahn_threshold">Threshold:</label>
+                                    <input type="number" name="ahn_threshold" id="ahn_threshold" value="0.2"
+                                        class="form-control mb-2" disabled>
+                                    <input type="checkbox" id="ahn_use_threshold"> Use Threshold<br>
+                                    <label for="method">Linkage:</label>
+                                    <select name="method" class="form-select mb-2">
+                                        <option value="single">single</option>
+                                        <option value="complete">complete</option>
+                                    </select>
+                                    <br>
+                                    <label for="ahn_min_com">Min community size:</label>
+                                    <input type="number" name="ahn_min_com" value="3" class="form-control mb-2">
+                                </div>
+        
+                                <!-- Parameters for AHN Original -->
+                                <div id="ahn_original_params">
+                                    <label for="ahn_original_threshold">Threshold:</label>
+                                    <input type="number" name="ahn_original_threshold" id="ahn_original_threshold" value="0.2"
+                                        class="form-control mb-2" disabled>
+                                    <input type="checkbox" id="ahn_original_use_threshold"> Use Threshold<br>
+                                </div>
+        
+                                <!-- Parameters for OSLOM -->
+                                <div id="oslom_params" style="display:none;">
+                                    <label for="oslom_f_l_i">First Level Iterations (r):</label>
+                                    <input type="number" name="oslom_f_l_i" value="10" class="form-control mb-2">
+                                    <label for="oslom_h_l_i">Higher Level Iterations (hr):</label>
+                                    <input type="number" name="oslom_h_l_i" value="50" class="form-control mb-2">
+                                    <label for="oslom_p_v_t">p-value Threshold (t):</label>
+                                    <input type="number" name="oslom_p_v_t" value="0.1" class="form-control mb-2">
+                                    <label for="oslom_infomap">Infomap N (i):</label>
+                                    <input type="number" name="oslom_infomap" value="0" class="form-control mb-2">
+                                    <label for="oslom_louvain">Louvain N (l):</label>
+                                    <input type="number" name="oslom_louvain" value="0" class="form-control mb-2">
+                                    <label for="oslom_copra">Copra N (c):</label>
+                                    <input type="number" name="oslom_copra" value="0" class="form-control mb-2">
+                                    <label for="oslom_singler">Homeless (s):</label>
+                                    <input type="number" name="oslom_singler" value="0" class="form-control mb-2">
+                                </div>
+        
+                                <!-- Parameters for FCM -->
+                                <div id="fcm_params" style="display:none;">
+                                    <label for="m">FCM m:</label>
+                                    <input type="number" name="m" value="1.5" class="form-control mb-2">
+                                    <label for="threshold">FCM Threshold:</label>
+                                    <input type="number" name="threshold" value="0.3" class="form-control mb-2">
+                                    <label for="clusters">FCM Clusters:</label>
+                                    <input type="number" name="clusters" value="10" class="form-control mb-2">
+                                </div>
+        
+                                <!-- Parameters for CONGA -->
+                                <div id="conga_params" style="display:none;">
+                                    <label for="number_community">Number of Communities:</label>
+                                    <input type="number" name="number_community" value="5" class="form-control mb-2">
+                                </div>
+        
+                                <label for="N_iter">Number of Runs:</label>
+                                <input type="number" id="N_iter" placeholder="Number of runs" min="1" value="1"
+                                    class="form-control mb-2">
+        
+                                <button type="button" id="detect-btn" class="btn btn-primary" onclick="detectCommunities()"
+                                    disabled>Detect Communities</button>
+                            </form>
                         </div>
-                    </form>
-                    <form id="detect-form">
-                        <label for="algorithm">Algorithm:</label>
-                        <select id="algorithm" name="algorithm" onchange="toggleParams()" class="form-select mb-2">
-                            <option value="slpa">SLPA</option>
-                            <option value="slpa_cdlib">SLPA CDLIB</option>
-                            <option value="linkcom">AHN</option>
-                            <option value="linkcom_original">AHN original</option>
-                            <option value="n2vfcm">Node2Vec + FCM</option>
-                            <option value="conga">CONGA</option>
-                            <option value="oslom">OSLOM original</option>
-                        </select>
-
-                        <div id="slpa_params">
-                            <label for="T">Iterations (T):</label>
-                            <input type="number" name="T" value="20" class="form-control mb-2">
-                            <label for="r">Threshold (r):</label>
-                            <input type="text" name="r" value="0.3" class="form-control mb-2">
+        
+                        <!-- Image Column -->
+                        <div class="col-md-8 d-flex justify-content-center align-items-center">
+                            <img id="community_plot" src="" alt="Community Detection Plot"
+                                style="max-width: 100%; height: auto; display: none;" />
                         </div>
-
-                        <div id="ahn_params" style="display:none;">
-                            <label for="ahn_threshold">Threshold:</label>
-                            <input type="number" name="ahn_threshold" id="ahn_threshold" value="0.2" class="form-control mb-2" disabled>
-                            <input type="checkbox" id="ahn_use_threshold"> Use Threshold<br>
-                            <label for="method">Linkage:</label>
-                            <select name="method" class="form-select mb-2">
-                                <option value="single">single</option>
-                                <option value="complete">complete</option>
-                            </select>
-                            <label for="ahn_min_com">Min community size:</label>
-                            <input type="number" name="ahn_min_com" value="3" class="form-control mb-2">
-                        </div>
-
-                        <div id="ahn_original_params">
-                            <label for="ahn_original_threshold">Threshold:</label>
-                            <input type="number" name="ahn_original_threshold" id="ahn_original_threshold" value="0.2" class="form-control mb-2" disabled>
-                            <input type="checkbox" id="ahn_original_use_threshold"> Use Threshold<br>
-                        </div>
-
-                        <div id="oslom_params" style="display:none;">
-                            <label for="oslom_f_l_i">First Level Iterations (r):</label>
-                            <input type="number" name="oslom_f_l_i" value="10" class="form-control mb-2">
-                            <label for="oslom_h_l_i">Higher Level Iterations (hr):</label>
-                            <input type="number" name="oslom_h_l_i" value="50" class="form-control mb-2">
-                            <label for="oslom_p_v_t">p-value Threshold (t):</label>
-                            <input type="number" name="oslom_p_v_t" value="0.1" class="form-control mb-2">
-                            <label for="oslom_infomap">Infomap N (i):</label>
-                            <input type="number" name="oslom_infomap" value="0" class="form-control mb-2">
-                            <label for="oslom_louvain">Louvain N (l):</label>
-                            <input type="number" name="oslom_louvain" value="0" class="form-control mb-2">
-                            <label for="oslom_copra">Copra N (c):</label>
-                            <input type="number" name="oslom_copra" value="0" class="form-control mb-2">
-                            <label for="oslom_singler">Homeless (s):</label>
-                            <input type="number" name="oslom_singler" value="0" class="form-control mb-2">
-                        </div>
-                        
-                        <div id="fcm_params" style="display:none;">
-                            <label for="m">FCM m:</label>
-                            <input type="number" name="m" value="1.5" class="form-control mb-2">
-                            <label for="threshold">FCM Threshold:</label>
-                            <input type="number" name="threshold" value="0.3" class="form-control mb-2">
-                            <label for="clusters">FCM Clusters:</label>
-                            <input type="number" name="clusters" value="10" class="form-control mb-2">
-                        </div>
-
-                        <div id="conga_params" style="display:none;">
-                            <label for="number_community">Number of Communities:</label>
-                            <input type="number" name="number_community" value="5" class="form-control mb-2">
-                        </div>
-
-                        <label for="N">Number of Runs:</label>
-                        <input type="number" id="N" placeholder="Number of runs" min="1" value="1" class="form-control mb-2">
-
-                        <button type="button" id="detect-btn" class="btn btn-primary" onclick="detectCommunities()" disabled>Detect Communities</button>
-                    </form>
-
-                    
+                    </div>
                 </div>
-
-                <div class="col-md-8 d-flex justify-content-center align-items-center">
-                    <img id="community_plot" src="" alt="Community Detection Plot" style="max-width: 100%; height: auto; display: none;" />
+        
+                <!-- Second Row: Results -->
+                <div class="grid-item">
+                    <div class="community-results-container">
+                        <div id="detection-results" class="results-container"></div>
+                        
+                    </div>
+                    <button id="export-button" onclick="exportToLatex()" style="display:none;">Export</button>
+                        <button id="reset-button" onclick="resetResults()" style="display:none;">Reset</button>
                 </div>
             </div>
         </div>
 
-    </div>
 
-    <div class="example_graphs mb-4" id="example_graphs">
-        <h3>Example Graphs</h3>
-        <label for="graphHistorySelect">Choose a graph:</label>
-        <select id="graphHistorySelect">
-            <option value="" disabled selected>Select a graph</option>
-        </select>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.min.js"></script>
+        <script>
 
-        <br>
-        <button id="loadGraphButton" onclick="loadSelectedGraph()">Load Graph</button>
-    </div>
 
-    <h2>Community Detection Results</h2>
-    <div class="community-results-container">
+            function switchMode() {
+                const mode = document.getElementById("mode").value;
 
-        <!-- Left: Textual Results (1/3 width) -->
-        <div class="results-column">
-            
-            <div id="detection-results" class="results-container"></div>
-            <button id="export-button" onclick="exportToLatex()" style="display:none;">Export</button>
-            <button id="reset-button" onclick="resetResults()" style="display:none;">Reset</button>
-        </div>
+                document.getElementById("generate").style.display = "none";
+                document.getElementById("optimize").style.display = "none";
+                document.getElementById("detect_container").style.display = "none";
+                document.getElementById("example_graphs").style.display = "none";
+                //document.getElementById("show-more-btn").style.display = "none";
 
-        <!-- Right: Plot (2/3 width) -->
-
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.min.js"></script>
-    <script>
-
-        
-        function switchMode() {
-            const mode = document.getElementById("mode").value;
-
-            document.getElementById("generate").style.display = "none";
-            document.getElementById("optimize").style.display = "none";
-            document.getElementById("detect_container").style.display = "none";
-            document.getElementById("example_graphs").style.display = "none";
-            //document.getElementById("show-more-btn").style.display = "none";
-
-            if (mode === "generate") {
-                document.getElementById("generate").style.display = "block";
-                //document.getElementById("show-more-btn").style.display = "block";
-            } else if (mode === "optimize") {
-                document.getElementById("optimize").style.display = "block";
-            } else if (mode === "detect_container") {
-                document.getElementById("detect_container").style.display = "block";
-            } else if (mode === "example_graphs") {
-                document.getElementById("example_graphs").style.display = "block";
+                if (mode === "generate") {
+                    document.getElementById("generate").style.display = "block";
+                    //document.getElementById("show-more-btn").style.display = "block";
+                } else if (mode === "optimize") {
+                    document.getElementById("optimize").style.display = "block";
+                } else if (mode === "detect_container") {
+                    document.getElementById("detect_container").style.display = "block";
+                } else if (mode === "example_graphs") {
+                    document.getElementById("example_graphs").style.display = "block";
+                }
             }
-        }
 
 
-        //switchMode();
+            //switchMode();
 
 
-        async function loadGraphHistory() {
-            const selectElement = document.getElementById('graphHistorySelect');
+            async function loadGraphHistory() {
+                const selectElement = document.getElementById('graphHistorySelect');
 
-            // Clear previous options
-            selectElement.innerHTML = '';
+                // Clear previous options
+                selectElement.innerHTML = '';
 
-            try {
-                const response = await fetch('/get_available_graphs');
-                const graphs = await response.json();
+                try {
+                    const response = await fetch('/get_available_graphs');
+                    const graphs = await response.json();
 
-                // Populate the select dropdown with available graphs
-                graphs.forEach(graph => {
-                    const option = document.createElement('option');
-                    option.value = graph;
-                    option.textContent = graph;
-                    selectElement.appendChild(option);
+                    // Populate the select dropdown with available graphs
+                    graphs.forEach(graph => {
+                        const option = document.createElement('option');
+                        option.value = graph;
+                        option.textContent = graph;
+                        selectElement.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading graph history:', error);
+                    alert('Failed to load graph history. Please try again later.');
+                }
+            }
+
+
+            loadGraphHistory();
+
+
+            async function loadSelectedGraph() {
+
+
+
+                const selectedGraph = document.getElementById('graphHistorySelect').value;
+                const response = await fetch(`/load_graph/${selectedGraph}`, {
+                    method: 'POST',
                 });
-            } catch (error) {
-                console.error('Error loading graph history:', error);
-                alert('Failed to load graph history. Please try again later.');
-            }
-        }
 
 
-        loadGraphHistory();
+                if (response.ok) {
+                    document.getElementById("optimize-slpa-btn").disabled = false;
+                    document.getElementById("message").innerText = "Graph Loaded";
+                    const lfrParams = selectedGraph
+                        .split('_')
+                        .map(param => param.replace('-', '='))
+                        .join('_');
 
+                    const detectionResultsDiv = document.getElementById("detection-results");
 
-        async function loadSelectedGraph() {
-
-
-
-            const selectedGraph = document.getElementById('graphHistorySelect').value;
-            const response = await fetch(`/load_graph/${selectedGraph}`, {
-                method: 'POST',
-            });
-
-
-
-
-            if (response.ok) {
-                 document.getElementById("message").innerText = "Graph Loaded";
-                const lfrParams = selectedGraph
-                    .split('_')
-                    .map(param => param.replace('-', '=')) 
-                    .join('_'); 
-
-                const detectionResultsDiv = document.getElementById("detection-results");
-
-                if (!detectionResultsDiv.querySelector("#results-table")) {
-                    // If table doesn't exist, create it
-                    let tableHTML = `
+                    if (!detectionResultsDiv.querySelector("#results-table")) {
+                        // If table doesn't exist, create it
+                        let tableHTML = `
             <table id="results-table" border="1">
                 <thead>
                     <tr>
@@ -499,7 +436,6 @@
                         <th>F1</th>
                         <th>Q_l</th>
                         <th>Q_s</th>
-                        <th>Q_s2</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -507,178 +443,178 @@
                 </tbody>
             </table>
         `;
-                    detectionResultsDiv.innerHTML = tableHTML;
-                } else {
-                    // If table already exists, just add the new LFR section
-                    let table = detectionResultsDiv.querySelector("#results-table tbody");
-                    let newLFRRow = document.createElement("tr");
-                    newLFRRow.innerHTML = `<td colspan="6"><strong>LFR: ${lfrParams}</strong></td>`;
-                    table.insertBefore(newLFRRow, table.firstChild);
-                }
-                document.getElementById("detect-btn").disabled = false;
-                document.getElementById("export-button").style.display = "block";
-                document.getElementById("reset-button").style.display = "block";
-            } else {
-                console.log('bad');
-                alert('Chyba při načítání grafu.');
-            }
-        }
-
-
-
-        function toggleParams() {
-            const algo = document.getElementById("algorithm").value;
-            const nIterationsInput = document.getElementById("N");
-            const nIterationsLabel = document.getElementById("N").previousElementSibling;
-
-            document.getElementById("slpa_params").style.display = (algo == "slpa" || algo == "slpa_cdlib") ? "block" : "none";
-            document.getElementById("node2vec_params").style.display = (algo == "n2vfcm") ? "block" : "none";
-            document.getElementById("fcm_params").style.display = (algo == "n2vfcm") ? "block" : "none";
-            //document.getElementById("demon_params").style.display = (algo == "demon") ? "block" : "none";
-            document.getElementById("conga_params").style.display = (algo == "conga") ? "block" : "none";
-            document.getElementById("ahn_params").style.display = (algo == "linkcom") ? "block" : "none";
-            document.getElementById("ahn_original_params").style.display = (algo == "linkcom_original") ? "block" : "none";
-            document.getElementById("oslom_params").style.display = (algo == "oslom") ? "block" : "none";
-
-            const hideDetectionOptions = (algo === "oslom" || algo === "linkcom" || algo === "linkcom_original");
-            if (hideDetectionOptions) {
-                nIterationsInput.style.display = "none";
-                nIterationsLabel.style.display = "none";
-            } else {
-                nIterationsInput.style.display = "block";
-                nIterationsLabel.style.display = "block";
-            }
-        }
-
-
-        document.getElementById('ahn_use_threshold').addEventListener('change', function () {
-            const ahnthresholdInput = document.getElementById('ahn_threshold');
-            ahnthresholdInput.disabled = !this.checked;
-        });
-
-        document.getElementById('ahn_original_use_threshold').addEventListener('change', function () {
-            const ahnthresholdInput = document.getElementById('ahn_original_threshold');
-            ahnthresholdInput.disabled = !this.checked;
-        });
-
-        document.getElementById("optimize-slpa-btn").addEventListener("click", async () => {
-            // Disable Detect button during optimization
-            document.getElementById("detect-btn").disabled = true;
-            document.getElementById("message").innerText = "Optimizing parameters...";
-
-            // Get selected algorithm and metric
-            const selectedMetric = document.getElementById("metric-select").value;
-            const selectedAlgorithm = document.getElementById("algorithm-select").value;
-
-            try {
-                const response = await fetch("/optimize", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ metric: selectedMetric, algorithm: selectedAlgorithm })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    document.getElementById("message").innerText = result.message;
-
-                    // Show optimized parameters
-                    let bestParamsHTML = `<p>Optimized Parameters:</p>`;
-                    for (let [key, value] of Object.entries(result.best_params)) {
-                        bestParamsHTML += `<p>${key}: ${value}</p>`;
+                        detectionResultsDiv.innerHTML = tableHTML;
+                    } else {
+                        // If table already exists, just add the new LFR section
+                        let table = detectionResultsDiv.querySelector("#results-table tbody");
+                        let newLFRRow = document.createElement("tr");
+                        newLFRRow.innerHTML = `<td colspan="6"><strong>LFR: ${lfrParams}</strong></td>`;
+                        table.insertBefore(newLFRRow, table.firstChild);
                     }
-                    bestParamsHTML += `<p>Best ${selectedMetric}: ${result.best_score}</p>`;
-
-                    document.getElementById("best-params").innerHTML = bestParamsHTML;
-
+                    document.getElementById("detect-btn").disabled = false;
+                    document.getElementById("export-button").style.display = "block";
+                    document.getElementById("reset-button").style.display = "block";
                 } else {
-                    document.getElementById("message").innerText = result.message;
+                    console.log('bad');
+                    alert('Chyba při načítání grafu.');
                 }
-
-                // Re-enable Detect button
-                document.getElementById("detect-btn").disabled = false;
-
-            } catch (error) {
-                document.getElementById("message").innerText = "An error occurred while optimizing parameters.";
-                console.error('Error:', error);
-
-                document.getElementById("detect-btn").disabled = false;
             }
-        });
 
 
-        function resetResults() {
-            let detectionResultsDiv = document.getElementById("detection-results").innerHTML = '';
-            let resetButton = document.getElementById("reset-button").style.display = "none";
-            let exportButton = document.getElementById("export-button").style.display = "none";
-            fetch("/reset", {
-                method: "POST"
-            })
-                .then(response => response.json())
-                .then(result => {
+
+            function toggleParams() {
+                const algo = document.getElementById("algorithm").value;
+                const nIterationsInput = document.getElementById("N_iter");
+                const nIterationsLabel = document.getElementById("N_iter").previousElementSibling;
+
+                document.getElementById("slpa_params").style.display = (algo == "slpa" || algo == "slpa_cdlib") ? "block" : "none";
+                document.getElementById("node2vec_params").style.display = (algo == "n2vfcm") ? "block" : "none";
+                document.getElementById("fcm_params").style.display = (algo == "n2vfcm") ? "block" : "none";
+                //document.getElementById("demon_params").style.display = (algo == "demon") ? "block" : "none";
+                document.getElementById("conga_params").style.display = (algo == "conga") ? "block" : "none";
+                document.getElementById("ahn_params").style.display = (algo == "linkcom") ? "block" : "none";
+                document.getElementById("ahn_original_params").style.display = (algo == "linkcom_original") ? "block" : "none";
+                document.getElementById("oslom_params").style.display = (algo == "oslom") ? "block" : "none";
+
+                const hideDetectionOptions = (algo === "oslom" || algo === "linkcom" || algo === "linkcom_original");
+                if (hideDetectionOptions) {
+                    nIterationsInput.style.display = "none";
+                    nIterationsLabel.style.display = "none";
+                } else {
+                    nIterationsInput.style.display = "block";
+                    nIterationsLabel.style.display = "block";
+                }
+            }
+
+
+            document.getElementById('ahn_use_threshold').addEventListener('change', function () {
+                const ahnthresholdInput = document.getElementById('ahn_threshold');
+                ahnthresholdInput.disabled = !this.checked;
+            });
+
+            document.getElementById('ahn_original_use_threshold').addEventListener('change', function () {
+                const ahnthresholdInput = document.getElementById('ahn_original_threshold');
+                ahnthresholdInput.disabled = !this.checked;
+            });
+
+            document.getElementById("optimize-slpa-btn").addEventListener("click", async () => {
+                // Disable Detect button during optimization
+                document.getElementById("detect-btn").disabled = true;
+                document.getElementById("message").innerText = "Optimizing parameters...";
+
+                // Get selected algorithm and metric
+                const selectedMetric = document.getElementById("metric-select").value;
+                const selectedAlgorithm = document.getElementById("algorithm-select").value;
+
+                try {
+                    const response = await fetch("/optimize", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ metric: selectedMetric, algorithm: selectedAlgorithm })
+                    });
+
+                    const result = await response.json();
+
                     if (result.success) {
                         document.getElementById("message").innerText = result.message;
 
-                        document.getElementById("community_plot").style.display = "none";
+                        // Show optimized parameters
+                        let bestParamsHTML = `<p>Optimized Parameters:</p>`;
+                        for (let [key, value] of Object.entries(result.best_params)) {
+                            bestParamsHTML += `<p>${key}: ${value}</p>`;
+                        }
+                        bestParamsHTML += `<p>Best ${selectedMetric}: ${result.best_score}</p>`;
+
+                        document.getElementById("best-params").innerHTML = bestParamsHTML;
 
                     } else {
-                        document.getElementById("message").innerText = "Error: " + result.message;
+                        document.getElementById("message").innerText = result.message;
                     }
-                })
-                .catch(error => {
-                    console.error("Reset error:", error);
-                    document.getElementById("message").innerText = "Error during reset!";
-                });
-        }
 
-        async function generateGraph() {
-            const detectionResultsDiv = document.getElementById("detection-results");
+                    // Re-enable Detect button
+                    document.getElementById("detect-btn").disabled = false;
 
-            document.getElementById("message").innerText = "Graph being generated...";
+                } catch (error) {
+                    document.getElementById("message").innerText = "An error occurred while optimizing parameters.";
+                    console.error('Error:', error);
 
-            const formData = new FormData(document.getElementById("generate-form"));
-            let params = {};
-            formData.forEach((value, key) => { params[key] = value; });
-
-            let response = await fetch("/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(params)
+                    document.getElementById("detect-btn").disabled = false;
+                }
             });
 
-            let result = await response.json();
 
-            // Process the response
-            if (result.success) {
-                document.getElementById("message").innerText = "Graph successfully generated!";
-                document.getElementById("detect-btn").disabled = false;  // Enable the 'Detect Communities' button
-                document.getElementById("optimize-slpa-btn").disabled = false;
+            function resetResults() {
+                let detectionResultsDiv = document.getElementById("detection-results").innerHTML = '';
+                let resetButton = document.getElementById("reset-button").style.display = "none";
+                let exportButton = document.getElementById("export-button").style.display = "none";
+                fetch("/reset", {
+                    method: "POST"
+                })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            document.getElementById("message").innerText = result.message;
 
-                // Optionally, display benchmark info
-                document.getElementById("benchmark-info").innerText = result.benchmark_info;
+                            document.getElementById("community_plot").style.display = "none";
 
-                let numCommunities = result.num_communities;  // Assuming the number of communities is part of the response
+                        } else {
+                            document.getElementById("message").innerText = "Error: " + result.message;
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Reset error:", error);
+                        document.getElementById("message").innerText = "Error during reset!";
+                    });
+            }
 
-                // Update the number of communities display
-                document.querySelectorAll(".num-communities-info").forEach((el) => {
-                    el.innerText = result.num_communities !== undefined
-                        ? `Ground Truth Communities: ${result.num_communities}`
-                        : "(Number of communities will appear here)";
+            async function generateGraph() {
+                const detectionResultsDiv = document.getElementById("detection-results");
+
+                document.getElementById("message").innerText = "Graph being generated...";
+
+                const formData = new FormData(document.getElementById("generate-form"));
+                let params = {};
+                formData.forEach((value, key) => { params[key] = value; });
+
+                let response = await fetch("/generate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(params)
                 });
 
+                let result = await response.json();
 
-                let lfrParams = Object.entries(result.LFR_parameters)
-                    .filter(([key, val]) => val)
-                    .map(([key, val]) => `${key}_${val}`)
-                    .join("_");
+                // Process the response
+                if (result.success) {
+                    document.getElementById("message").innerText = "Graph successfully generated!";
+                    document.getElementById("detect-btn").disabled = false;  // Enable the 'Detect Communities' button
+                    document.getElementById("optimize-slpa-btn").disabled = false;
+
+                    // Optionally, display benchmark info
+                    document.getElementById("benchmark-info").innerText = result.benchmark_info;
+
+                    let numCommunities = result.num_communities;  // Assuming the number of communities is part of the response
+
+                    // Update the number of communities display
+                    document.querySelectorAll(".num-communities-info").forEach((el) => {
+                        el.innerText = result.num_communities !== undefined
+                            ? `Ground Truth Communities: ${result.num_communities}`
+                            : "(Number of communities will appear here)";
+                    });
+
+
+                    let lfrParams = Object.entries(result.LFR_parameters)
+                        .filter(([key, val]) => val)
+                        .map(([key, val]) => `${key}_${val}`)
+                        .join("_");
 
 
 
-                if (!detectionResultsDiv.querySelector("#results-table")) {
-                    // If table doesn't exist, create it
-                    let tableHTML = `
+                    if (!detectionResultsDiv.querySelector("#results-table")) {
+                        // If table doesn't exist, create it
+                        let tableHTML = `
                 <table id="results-table" border="1">
                     <thead>
                         <tr>
@@ -688,7 +624,6 @@
                             <th>F1</th>
                             <th>Q_l</th>
                             <th>Q_s</th>
-                            <th>Q_s2</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -696,149 +631,152 @@
                     </tbody>
                 </table>
             `;
-                    detectionResultsDiv.innerHTML = tableHTML;
-                } else {
-                    // If table already exists, just add the new LFR section
-                    let table = detectionResultsDiv.querySelector("#results-table tbody");
-                    let newLFRRow = document.createElement("tr");
-                    newLFRRow.innerHTML = `<td colspan="7"><strong>LFR_${lfrParams}</strong></td>`;
-                    table.insertBefore(newLFRRow, table.firstChild);
+                        detectionResultsDiv.innerHTML = tableHTML;
+                    } else {
+                        // If table already exists, just add the new LFR section
+                        let table = detectionResultsDiv.querySelector("#results-table tbody");
+                        let newLFRRow = document.createElement("tr");
+                        newLFRRow.innerHTML = `<td colspan="7"><strong>LFR_${lfrParams}</strong></td>`;
+                        table.insertBefore(newLFRRow, table.firstChild);
 
+                    }
+
+                    loadGraphHistory();
+
+
+                    document.getElementById("export-button").style.display = "block";
+                    document.getElementById("reset-button").style.display = "block";
+                } else {
+                    document.getElementById("message").innerText = `Error: ${result.message}`;
+                    document.getElementById("detect-btn").disabled = true;
+                }
+            }
+
+
+            function showPlot(imageUrl) {
+                const timestamp = new Date().getTime();
+                document.getElementById("community_plot").src = imageUrl;
+                document.getElementById("community_plot").style.display = "block";
+            }
+
+
+            function generateEmbedding() {
+                const url = '/generateEmbedding';
+                document.getElementById("message").innerText = 'Generating Embedding...';
+                // Collect the user inputs for parameters (these can come from form inputs, for example)
+                const dimensions = document.querySelector("input[name='dimensions']").value;
+                const walkLength = document.querySelector("input[name='walk_length']").value;
+                const numWalks = document.querySelector("input[name='num_walks']").value;
+                const p = document.querySelector("input[name='p']").value;
+                const q = document.querySelector("input[name='q']").value;
+
+
+                // Prepare the payload for the API request
+                const data = {
+                    dimensions: dimensions,
+                    walk_length: walkLength,
+                    num_walks: numWalks,
+                    p: p,
+                    q: q
+                };
+
+                // Make the POST request to the /generateEmbedding endpoint
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById("message").innerText = 'Embeddings generated successfully!';
+                        } else {
+                            document.getElementById("message").innerText = 'Error during Embeddings generated successfully!';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during request:', error);
+                        alert('An error occurred while generating embeddings.');
+                    });
+            }
+            function detectCommunities() {
+
+                console.log("Clicked detect com");
+                document.getElementById("best-params").innerText = "";
+                document.getElementById("message").innerText = "Algorithm running...";
+                document.getElementById("detect-btn").disabled = true;
+                var formData = {
+                    algorithm: document.getElementById("algorithm").value,
+                    N_iter: document.getElementById("N_iter").value || 1
+                };
+
+                if (formData.algorithm == "oslom" || formData.algorithm == "linkcom" || formData.algorithm == "linkcom_original") {
+                    formData.N_iter = 1;
                 }
 
-                loadGraphHistory();
+                if (formData.algorithm === "slpa" || formData.algorithm == "slpa_cdlib") {
+                    formData.T = document.querySelector("input[name='T']").value;
+                    formData.r = document.querySelector("input[name='r']").value;
+                } else if (formData.algorithm === "n2vfcm") {
+                    formData.clusters = document.querySelector("input[name='clusters']").value;
+                    formData.m = document.querySelector("input[name='m']").value;
+                    formData.threshold = document.querySelector("input[name='threshold']").value;
 
 
-                document.getElementById("export-button").style.display = "block";
-                document.getElementById("reset-button").style.display = "block";
-            } else {
-                document.getElementById("message").innerText = `Error: ${result.message}`;
-                document.getElementById("detect-btn").disabled = true;
-            }
-        }
+                } else if (formData.algorithm === "demon") {
+                    formData.epsilon = document.querySelector("input[name='epsilon']").value;
+                    formData.min_community_size = document.querySelector("input[name='min_community_size']").value;
+                } else if (formData.algorithm === "conga") {
+                    formData.number_community = document.querySelector("input[name='number_community']").value;
+                } else if (formData.algorithm === "linkcom") {
+                    const useThreshold = document.getElementById('ahn_use_threshold').checked;
+                    formData.ahn_use_threshold = useThreshold;
+                    formData.ahn_threshold = document.querySelector("input[name='ahn_threshold']").value;
+                    formData.ahn_min_com = document.querySelector("input[name='ahn_min_com']").value;
+                    formData.method = document.querySelector("select[name='method']").value;
+                } else if (formData.algorithm == "oslom") {
+                    formData.oslom_f_l_i = document.querySelector("input[name='oslom_f_l_i']").value;
+                    formData.oslom_h_l_i = document.querySelector("input[name='oslom_h_l_i']").value;
+                    formData.oslom_p_v_t = document.querySelector("input[name='oslom_p_v_t']").value;
+                    formData.oslom_infomap = document.querySelector("input[name='oslom_infomap']").value;
+                    formData.oslom_louvain = document.querySelector("input[name='oslom_louvain']").value;
+                    formData.oslom_copra = document.querySelector("input[name='oslom_copra']").value;
+                    formData.oslom_singler = document.querySelector("input[name='oslom_singler']").value;
 
+                }
+                else if (formData.algorithm === "linkcom_original") {
+                    formData.ahn_original_threshold = document.querySelector("input[name='ahn_original_threshold']").value;
+                    const useThreshold = document.getElementById('ahn_original_use_threshold').checked;
+                    formData.ahn_original_use_threshold = useThreshold;
+                }
 
-        function showPlot(imageUrl) {
-            const timestamp = new Date().getTime();
-            document.getElementById("community_plot").src = imageUrl;
-            document.getElementById("community_plot").style.display = "block";
-        }
-
-
-        function generateEmbedding() {
-            const url = '/generateEmbedding';
-            document.getElementById("message").innerText = 'Generating Embedding...';
-            // Collect the user inputs for parameters (these can come from form inputs, for example)
-            const dimensions = document.querySelector("input[name='dimensions']").value;
-            const walkLength = document.querySelector("input[name='walk_length']").value;
-            const numWalks = document.querySelector("input[name='num_walks']").value;
-            const p = document.querySelector("input[name='p']").value;
-            const q = document.querySelector("input[name='q']").value;
-
-
-            // Prepare the payload for the API request
-            const data = {
-                dimensions: dimensions,
-                walk_length: walkLength,
-                num_walks: numWalks,
-                p: p,
-                q: q
-            };
-
-            // Make the POST request to the /generateEmbedding endpoint
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById("message").innerText = 'Embeddings generated successfully!';
-                    } else {
-                        document.getElementById("message").innerText = 'Error during Embeddings generated successfully!';
-                    }
+                fetch("/detect", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(formData)
                 })
-                .catch(error => {
-                    console.error('Error during request:', error);
-                    alert('An error occurred while generating embeddings.');
-                });
-        }
-        function detectCommunities() {
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
 
-            document.getElementById("best-params").innerText = "";
-            document.getElementById("message").innerText = "Algorithm running...";
-            document.getElementById("detect-btn").disabled = true;
-            var formData = {
-                algorithm: document.getElementById("algorithm").value,
-                N: document.getElementById("N").value || 1
-            };
+                            showPlot(result.results[0].image_url)
+                            document.getElementById("message").innerText = result.message;
+                            document.getElementById("detect-btn").disabled = false;
 
-
-
-            if (formData.algorithm === "slpa" || formData.algorithm == "slpa_cdlib") {
-                formData.T = document.querySelector("input[name='T']").value;
-                formData.r = document.querySelector("input[name='r']").value;
-            } else if (formData.algorithm === "n2vfcm") {
-                formData.clusters = document.querySelector("input[name='clusters']").value;
-                formData.m = document.querySelector("input[name='m']").value;
-                formData.threshold = document.querySelector("input[name='threshold']").value;
-
-
-            } else if (formData.algorithm === "demon") {
-                formData.epsilon = document.querySelector("input[name='epsilon']").value;
-                formData.min_community_size = document.querySelector("input[name='min_community_size']").value;
-            } else if (formData.algorithm === "conga") {
-                formData.number_community = document.querySelector("input[name='number_community']").value;
-            } else if (formData.algorithm === "linkcom") {
-                const useThreshold = document.getElementById('ahn_use_threshold').checked;
-                formData.ahn_use_threshold = useThreshold;
-                formData.ahn_threshold = document.querySelector("input[name='ahn_threshold']").value;
-                formData.ahn_min_com = document.querySelector("input[name='ahn_min_com']").value;
-                formData.method = document.querySelector("select[name='method']").value;
-            } else if (formData.algorithm == "oslom") {
-                formData.oslom_f_l_i = document.querySelector("input[name='oslom_f_l_i']").value;
-                formData.oslom_h_l_i = document.querySelector("input[name='oslom_h_l_i']").value;
-                formData.oslom_p_v_t = document.querySelector("input[name='oslom_p_v_t']").value;
-                formData.oslom_infomap = document.querySelector("input[name='oslom_infomap']").value;
-                formData.oslom_louvain = document.querySelector("input[name='oslom_louvain']").value;
-                formData.oslom_copra = document.querySelector("input[name='oslom_copra']").value;
-                formData.oslom_singler = document.querySelector("input[name='oslom_singler']").value;
-
-            }
-            else if (formData.algorithm === "linkcom_original") {
-                formData.ahn_original_threshold = document.querySelector("input[name='ahn_original_threshold']").value;
-                const useThreshold = document.getElementById('ahn_original_use_threshold').checked;
-                formData.ahn_original_use_threshold = useThreshold;
-            }
-
-            fetch("/detect", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(formData)
-            })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-
-                        showPlot(result.results[0].image_url)
-                        document.getElementById("message").innerText = result.message;
-                        document.getElementById("detect-btn").disabled = false;
-
-                        const tableBody = document.querySelector("#results-table tbody");
-                        result.results.forEach((res, index) => {
-                            let algorithmParams = Object.entries(res.params)
-                                .map(([key, val]) => `${key}_${val}`)
-                                .join("_");
+                            const tableBody = document.querySelector("#results-table tbody");
+                            result.results.forEach((res, index) => {
+                                let algorithmParams = Object.entries(res.params)
+                                    .map(([key, val]) => `${key}_${val}`)
+                                    .join("_");
 
 
 
-                            let newRow = document.createElement("tr");
-                            newRow.innerHTML = `
+                                let newRow = document.createElement("tr");
+                                newRow.innerHTML = `
                 <td>${res.algorithm}_${algorithmParams}</td>
                 <td>${res.omega}</td>
                 <td>${res.onmi}</td>
@@ -848,75 +786,75 @@
                 <td><button onclick="showPlot('${res.image_url}')">Show</button></td>
             `;
 
-                            if (tableBody.children.length > 1) {
-                                tableBody.insertBefore(newRow, tableBody.children[1]);
-                            } else {
-                                tableBody.appendChild(newRow);
-                            }
+                                if (tableBody.children.length > 1) {
+                                    tableBody.insertBefore(newRow, tableBody.children[1]);
+                                } else {
+                                    tableBody.appendChild(newRow);
+                                }
 
-                        });
+                            });
 
-                    } else {
-                        document.getElementById("message").innerText = "Error: " + result.message;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById("message").innerText = "An error occurred during community detection!";
-                    document.getElementById("detect-btn").disabled = true;
+                        } else {
+                            document.getElementById("message").innerText = "Error: " + result.message;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById("message").innerText = "An error occurred during community detection!";
+                        document.getElementById("detect-btn").disabled = true;
+                    });
+            }
+
+
+            function exportToLatex() {
+                let table = document.getElementById("results-table");
+                if (!table) {
+                    alert("No results to export!");
+                    return;
+                }
+
+                let latexCode = "\\begin{table}[h]\n\\centering\n\\begin{tabular}{|l|c|c|c|c|c|}\n\\toprule\n";
+
+                let headers = ["Algorithm", "Omega", "ONMI", "F1", "$Q_l$", "$Q_s$"];
+                latexCode += headers.join(" & ") + " \\\\\n\\midrule\n";
+
+                let rows = table.querySelectorAll("tbody tr");
+                rows.forEach(row => {
+                    let cols = row.querySelectorAll("td");
+                    let rowText = Array.from(cols)
+                        .slice(0, -1)  // Skip the last column
+                        .map(col => col.innerText.replaceAll("_", "\\_"))
+                        .join(" & ");
+                    latexCode += rowText + " \\\\\n";
                 });
-        }
 
+                latexCode += "\\bottomrule\n\\end{tabular}\n\\caption{Community Detection Results}\n\\label{tab:results}\n\\end{table}";
 
-        function exportToLatex() {
-            let table = document.getElementById("results-table");
-            if (!table) {
-                alert("No results to export!");
-                return;
+                let blob = new Blob([latexCode], { type: "text/plain" });
+                let link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "community_results.tex";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
 
-            let latexCode = "\\begin{table}[h]\n\\centering\n\\begin{tabular}{|l|c|c|c|c|c|}\n\\toprule\n";
+            toggleParams();
 
-            let headers = ["Algorithm", "ONMI", "F1", "Omega", "Q_l", "Q_s"];
-            latexCode += headers.join(" & ") + " \\\\\n\\midrule\n";
+            function toggleMoreInfo() {
+                const moreInfoDiv = document.getElementById("more-info");
+                const showMoreButton = document.getElementById("show-more-btn");
 
-            let rows = table.querySelectorAll("tbody tr");
-            rows.forEach(row => {
-                let cols = row.querySelectorAll("td");
-                let rowText = Array.from(cols)
-                    .slice(0, -1)  // Skip the last column
-                    .map(col => col.innerText.replaceAll("_", "\\_"))
-                    .join(" & ");
-                latexCode += rowText + " \\\\\n";
-            });
-
-            latexCode += "\\bottomrule\n\\end{tabular}\n\\caption{Community Detection Results}\n\\label{tab:results}\n\\end{table}";
-
-            let blob = new Blob([latexCode], { type: "text/plain" });
-            let link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = "community_results.tex";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        toggleParams();
-
-        function toggleMoreInfo() {
-            const moreInfoDiv = document.getElementById("more-info");
-            const showMoreButton = document.getElementById("show-more-btn");
-
-            // Toggle display of "more-info"
-            if (moreInfoDiv.style.display === "none") {
-                moreInfoDiv.style.display = "block";
-                showMoreButton.innerText = "Show Less";
-            } else {
-                moreInfoDiv.style.display = "none";
-                showMoreButton.innerText = "Show More";
+                // Toggle display of "more-info"
+                if (moreInfoDiv.style.display === "none") {
+                    moreInfoDiv.style.display = "block";
+                    showMoreButton.innerText = "Show Less";
+                } else {
+                    moreInfoDiv.style.display = "none";
+                    showMoreButton.innerText = "Show More";
+                }
             }
-        }
-    </script>
+        </script>
 
 </body>
 

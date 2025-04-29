@@ -9,38 +9,6 @@ def shen_modularity(G, communities):
     if m == 0:
         return 0.0
 
-    # Count number of communities per node (O_i)
-    node_community_count = defaultdict(int)
-    for c_id, community in enumerate(communities):
-        for node in community:
-            node_community_count[node] += 1
-
-    all_nodes = set(G.nodes())
-    Q = 0.0
-
-    for i in all_nodes:
-        k_i = G.degree[i]
-        O_i = node_community_count[i] or 1
-        for j in all_nodes:
-            k_j = G.degree[j]
-            O_j = node_community_count[j] or 1
-            A_ij = 1 if G.has_edge(i, j) else 0
-            if i == j:
-                A_ij = 1
-            term = (A_ij - (k_i * k_j) / (2 * m)) / (O_i * O_j)
-            Q += term
-    Q /= (2 * m)
-    return Q
-
-
-import networkx as nx
-from collections import defaultdict
-
-def shen_modularity_community_form(G, communities):
-    m = G.number_of_edges()
-    if m == 0:
-        return 0.0
-
     # Krok 1: Spočítej O_i (počet komunit pro každý uzel)
     node_community_count = defaultdict(int)
     for community in communities:
