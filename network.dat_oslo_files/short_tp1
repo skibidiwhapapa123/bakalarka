@@ -1,6 +1,8 @@
-#module 0 size: 6 bs: 0.0931786
-3 8 9 12 13 17 
-#module 1 size: 11 bs: 0.0931786
-0 1 2 4 5 6 7 10 11 15 16 
+#module 0 size: 9 bs: 0.0813072
+0 1 2 3 4 7 8 9 11 
+#module 1 size: 2 bs: 0.0191637
+10 12 
 #module 2 size: 1 bs: 1
-14 
+5 
+#module 3 size: 1 bs: 1
+6 
